@@ -7,29 +7,36 @@ short precondition(acb_poly_struct **polys, acb_ode_t ODE, acb_t z, slong prec) 
         return INVALID_DATA;
     }
     /* Find the highest degree amongst the given polynomials */
-    slong deg = 0, ord = ODE->order;
-    for (slong i = (ord); i >= 0; i--) {
-        if (polys[i] == NULL) {
-            if (deg == 0) ord--;
+    slong polyMaxLength = 0, ord = ODE->order;
+    for (slong i = ord; i >= 0; i--)
+    {
+        if (polys[i] == NULL)
+        {
+            if (polyMaxLength == 0) ord--;
         }
-        else if (deg < acb_poly_length(polys[i])) deg = acb_poly_length(polys[i]);
+        else if (polyMaxLength < acb_poly_length(polys[i]))
+            polyMaxLength = acb_poly_length(polys[i]);
     }
     order(ODE) = ord;
-    degree(ODE) = deg;
-    if (ord <= 0) {
+    degree(ODE) = polyMaxLength;
+    if (ord <= 0)
+    {
         flint_printf("The order of the differential equation has to be positive.\n");
         return INVALID_DATA;
     }
-    flint_printf("The polynomials have degree at most %wd .\n",deg-1);
-    if (z == NULL) return ORDINARY;
+    flint_printf("The polynomials have degree at most %wd .\n",polyMaxLength-1);
+    if (z == NULL)
+        return ORDINARY;
 
     /* Check if z is a singular point (regularity is elsewhere) */
     acb_t r; acb_init(r);
     acb_t m; acb_init(m);
     acb_poly_evaluate(r,polys[ord],m,prec);
-    if (acb_is_zero(r)) {
+    if (acb_is_zero(r))
+    {
         flint_printf("Warning. This is a singular point. Proceed? (y/n)\n");
-        if (getchar() != 'y') return SINGULAR;
+        if (getchar() != 'y')
+            return SINGULAR;
     }
 
     /* Check if the series expansion converges */
@@ -37,10 +44,11 @@ short precondition(acb_poly_struct **polys, acb_ode_t ODE, acb_t z, slong prec) 
     _acb_poly_derivative(polyder,polys[ord]->coeffs,acb_poly_degree(polys[ord])+1,prec);
     _acb_poly_root_inclusion(r, m, acb_poly_get_coeff_ptr(polys[ord],0), polyder, acb_poly_degree(polys[ord])+1, prec);
     int convergent = ORDINARY;
-    if (!acb_is_exact(r) && !acb_contains(r,z)) {
+    if (!acb_is_exact(r) && !acb_contains(r,z))
+    {
         convergent = NON_CONVERGENT;
         flint_printf("There is definitely a root in the way. We have an enclosure of \n");
-        acb_printn(r,prec,0);flint_printf(" and we are evaluating at "); acb_printn(z,5,0); flint_printf("\n");
+        acb_printn(r,prec,0); flint_printf(" and we are evaluating at "); acb_printn(z,5,0); flint_printf("\n");
     }
     _acb_vec_clear(polyder,acb_poly_degree(polys[ord]));
     acb_clear(r);
@@ -87,6 +95,7 @@ void acb_ode_clear(acb_ode_t ODE) {
 }
 
 acb_ode_t acb_ode_copy(acb_ode_t ODE_out, acb_ode_t ODE_in) {
+    /* Copy data from ODE_in to an existing ODE structure or create a new one */
     if (ODE_out == NULL) {
         ODE_out = flint_malloc(sizeof(acb_ode_struct));
         if (ODE_out == NULL) {
