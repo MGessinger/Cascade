@@ -118,7 +118,7 @@ ulong find_power_series_regular(acb_t out, acb_ode_t ODE, acb_t in, slong bits) 
         if (++newIndex >= 5000)
         {
             flint_printf("5000 summands have been computed and no convergence was achieved. Aborting.\n");
-            FILE *out = fopen("polydump.txt","a");
+            FILE *out = fopen("data/polydump.txt","a");
             acb_poly_fprintd(out,ODE->series,10);
             fclose(out);
             newIndex = 0;
