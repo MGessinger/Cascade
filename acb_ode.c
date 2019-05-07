@@ -119,7 +119,7 @@ acb_ode_t acb_ode_copy (acb_ode_t ODE_out, acb_ode_t ODE_in) {
     return ODE_out;
 }
 
-void acb_ode_shift (acb_ode_t ODE, acb_t a)
+void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits)
 {
     if (degree(ODE) >= 1)
         for (slong j = 0; j <= order(ODE); j++)

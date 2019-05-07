@@ -32,6 +32,6 @@ void acb_ode_clear (acb_ode_t ODE);
 
 acb_ode_t acb_ode_copy (acb_ode_t ODE_out, acb_ode_t ODE_in);
 
-void acb_ode_shift (acb_ode_t ODE, acb_t a);
+void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits);
 
 #endif
