@@ -4,8 +4,9 @@ ulong find_power_series_regular(acb_t out, acb_ode_t ODE, acb_t in, slong bits) 
     /* Iteratively compute the summands of the power series solution near in (where z0 = 0)
      * Only converges when z0=0 is an ordinary point and and B(0,|in|) contains no singularities. */
     acb_t temp; acb_init(temp);
-    acb_t new_coeff; acb_init(new_coeff);
-    acb_t result; acb_init(result); /* Stores the result to allow for aliasing of out and in */
+    acb_t new_coeff; acb_init(new_coeff); /* Stores the latest coefficient which is being computed */
+    acb_t result;    acb_init(result);    /* Stores the result to allow for aliasing of out and in */
+    arf_t ubound;    arf_init(ubound);    /* Stores an upper bound for each old coefficient */
 
     if (in == NULL) /* No input means no output. */
     {
@@ -22,16 +23,16 @@ ulong find_power_series_regular(acb_t out, acb_ode_t ODE, acb_t in, slong bits) 
     do {
         num_of_nonzero = 0;
         acb_zero(new_coeff);
-        for (slong oldIndex = newIndex+order(ODE)-1; oldIndex >= 0; oldIndex--)
+        slong minIndex = (newIndex > degree(ODE)) ? newIndex - degree(ODE) : 0;
+        for (slong oldIndex = newIndex+order(ODE)-1; oldIndex >= minIndex; oldIndex--)
         {
-            if (newIndex - oldIndex > degree(ODE))
-                break;
             /* Ignore zero terms immediately: */
             if (acb_poly_get_coeff_ptr(ODE->series,oldIndex) == NULL)
                 continue;
             if (acb_is_zero(acb_poly_get_coeff_ptr(ODE->series,oldIndex)))
                 continue;
-            if (!acb_contains_zero(acb_poly_get_coeff_ptr(ODE->series,oldIndex)))
+            acb_get_abs_ubound_arf(ubound,acb_poly_get_coeff_ptr(ODE->series,oldIndex),bits);
+            if (arf_cmp_2exp_si(ubound,-bits) > 0)
                 num_of_nonzero++;
             acb_zero(temp);
             /* Loop through the polynomials */
@@ -88,6 +89,7 @@ ulong find_power_series_regular(acb_t out, acb_ode_t ODE, acb_t in, slong bits) 
     if (out != NULL)
         acb_set(out,result);
 
+    arf_clear(ubound);
     acb_clear(new_coeff);
     acb_clear(result); acb_clear(temp);
     return newIndex;
@@ -201,8 +203,9 @@ void entry_point (ulong n, slong digits, slong z_val) {
     acb_poly_init(pol0); acb_poly_init(pol1); acb_poly_init(pol2);
     polys[0] = pol0; polys[1] = pol1; polys[2] = pol2;
     acb_poly_set_coeff_si(polys[2],1,1);
-    acb_poly_set_coeff_si(polys[1],0,1);
-    //~ acb_poly_set_coeff_si(polys[0],0,-1);
+    acb_poly_set_coeff_si(polys[2],0,2);
+    acb_poly_set_coeff_si(polys[1],0,-1);
+    acb_poly_set_coeff_si(polys[0],0,-1);
 
     /* Input/Output */
     acb_t res, z;
@@ -220,21 +223,21 @@ void entry_point (ulong n, slong digits, slong z_val) {
     acb_set(path+steps,path);
 
     acb_ode_t ODE = acb_ode_init(polys,NULL,z,n,digits);
-    if (ODE != NULL)
-    {
-        find_monodromy_matrix(monodromy,ODE,path,steps+1,digits);
-        if (monodromy == NULL)
-            flint_printf("Could not allocate memory. Please try again.\n");
-        else
-        {
-            acb_mat_printd(monodromy,7);
-            acb_mat_clear(monodromy);
-        }
-    }
-    //~ acb_poly_set_coeff_si(ODE->series,1,1);
-    //~ acb_poly_set_coeff_si(ODE->series,0,1);
-    //~ find_power_series_regular(res,ODE,z,digits);
-    //~ checkODE(polys,ODE,digits);
+    //~ if (ODE != NULL)
+    //~ {
+        //~ find_monodromy_matrix(monodromy,ODE,path,steps+1,digits);
+        //~ if (monodromy == NULL)
+            //~ flint_printf("Could not allocate memory. Please try again.\n");
+        //~ else
+        //~ {
+            //~ acb_mat_printd(monodromy,7);
+            //~ acb_mat_clear(monodromy);
+        //~ }
+    //~ }
+    acb_poly_set_coeff_si(ODE->series,1,1);
+    acb_poly_set_coeff_si(ODE->series,0,1);
+    find_power_series_regular(res,ODE,z,digits);
+    checkODE(polys,ODE,digits);
 
     for (ulong i = 0; i <= n; i++)
         if (polys[i] != NULL)
@@ -252,18 +255,18 @@ int main (int argc, char **argv) {
     slong digits =  (argc >= 3) ? atol(argv[2]) : 100;
     slong z =       (argc >= 4) ? atol(argv[3]) : 1;
 
-    //~ entry_point(n,digits,z);
-    slong numofpols;
-    acb_poly_struct **polys = acb_ode_fread(&numofpols,"data/odetest.txt",2,digits);
-    for (slong i = 0; i < numofpols; i++)
-    {
-        if (polys[i] == NULL)
-            continue;
-        acb_poly_printd(polys[i],10);
-        flint_printf("\n");
-        acb_poly_clear(polys[i]);
-    }
-    free(polys);
+    entry_point(n,digits,z);
+    //~ slong numofpols;
+    //~ acb_poly_struct **polys = acb_ode_fread(&numofpols,"data/odetest.txt",2,digits);
+    //~ for (slong i = 0; i < numofpols; i++)
+    //~ {
+        //~ if (polys[i] == NULL)
+            //~ continue;
+        //~ acb_poly_printd(polys[i],10);
+        //~ flint_printf("\n");
+        //~ acb_poly_clear(polys[i]);
+    //~ }
+    //~ free(polys);
     flint_cleanup();
     return 0;
 }
