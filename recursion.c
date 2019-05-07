@@ -1,46 +1,5 @@
 #include "recursion.h"
 
-void analytic_continuation (acb_t res, acb_ode_t ODE_in, acb_srcptr path, slong len, slong digits, int output_series)
-{
-    acb_ode_t ODE = acb_ode_copy(NULL,ODE_in);
-    if (ODE == NULL) return;
-    acb_t a; acb_init(a);
-    slong accuracy, bits = digits/1.414; /* Start with a much smaller value to get a good estimate very quickly */
-
-    acb_set(a,path);
-    for (slong i = 1; i <= len; i++)
-    {
-        acb_ode_shift(ODE,a,bits);
-        acb_sub(a,path+i,path+(i-1),bits);
-        if (find_power_series_regular(res,ODE,a,bits) == 0)
-            break;
-        acb_poly_taylor_shift(ODE->series,ODE->series,a,bits);
-        accuracy = acb_rel_accuracy_bits(res);
-        /* If the precision of the result is not good enough, start over */
-        if (accuracy < digits && accuracy >= 0)
-        {
-            flint_printf("Ran out of precision at %w bits. ", bits);
-            flint_printf("Result dropped to a decimal-accuracy of %w at t = %w.\n",accuracy,i);
-            ODE = acb_ode_copy(ODE,ODE_in);
-            i = 0;
-            bits += (digits-accuracy)+len; /* This has proven to be a good choice */
-        }
-        if (bits >= 1.5*len*digits)
-        {
-            flint_printf("The internal precision exceeded a reasonable bound. Aborting.\n");
-            break;
-        }
-    }
-    if (output_series == TRUE)
-        _acb_vec_set(res,acb_poly_get_coeff_ptr(ODE->series,0),order(ODE));
-    else
-        flint_printf("It required a working precision of %w bits to reach the requested %w digits.\n\n",bits,digits/3.32193);
-
-    acb_ode_clear(ODE);
-    acb_clear(a);
-    return;
-}
-
 ulong find_power_series_regular(acb_t out, acb_ode_t ODE, acb_t in, slong bits) {
     /* Iteratively compute the summands of the power series solution near in (where z0 = 0)
      * Only converges when z0=0 is an ordinary point and and B(0,|in|) contains no singularities. */
@@ -134,6 +93,88 @@ ulong find_power_series_regular(acb_t out, acb_ode_t ODE, acb_t in, slong bits) 
     return newIndex;
 }
 
+void analytic_continuation (acb_t res, acb_ode_t ODE_in, acb_srcptr path, slong len, slong digits, int output_series)
+{
+    acb_ode_t ODE = acb_ode_copy(NULL,ODE_in);
+    if (ODE == NULL) return;
+    acb_t a; acb_init(a);
+    slong accuracy, bits = digits/1.414; /* Start with a much smaller value to get a good estimate very quickly */
+
+    acb_set(a,path);
+    for (slong i = 1; i <= len; i++)
+    {
+        acb_ode_shift(ODE,a,bits);
+        acb_sub(a,path+i,path+(i-1),bits);
+        if (find_power_series_regular(res,ODE,a,bits) == 0)
+            break;
+        acb_poly_taylor_shift(ODE->series,ODE->series,a,bits);
+        accuracy = acb_rel_accuracy_bits(res);
+        /* If the precision of the result is not good enough, start over */
+        if (accuracy < digits && accuracy >= 0)
+        {
+            flint_printf("Ran out of precision at %w bits. ", bits);
+            flint_printf("Result dropped to a decimal-accuracy of %w at t = %w.\n",accuracy,i);
+            ODE = acb_ode_copy(ODE,ODE_in);
+            i = 0;
+            bits += (digits-accuracy)+len; /* This has proven to be a good choice */
+        }
+        if (bits >= 1.5*len*digits)
+        {
+            flint_printf("The internal precision exceeded a reasonable bound. Aborting.\n");
+            break;
+        }
+    }
+    if (output_series == TRUE)
+        _acb_vec_set(res,acb_poly_get_coeff_ptr(ODE->series,0),order(ODE));
+    else
+        flint_printf("It required a working precision of %w bits to reach the requested %w digits.\n\n",bits,digits/3.32193);
+
+    acb_ode_clear(ODE);
+    acb_clear(a);
+    return;
+}
+
+int checkODE (acb_poly_struct **polys, acb_ode_t ODE, slong digits) {
+    acb_poly_t result, polyder, summand;
+    acb_poly_init(polyder);
+    acb_poly_init(summand);
+    acb_poly_init(result);
+
+    arf_t absValue;
+    arf_init(absValue);
+    int printed = 0;
+
+    acb_poly_set(polyder,ODE->series);
+    for (slong n = 0; n <= order(ODE); n++)
+    {
+        if (polys[n] == NULL)
+            continue;
+        acb_poly_mul(summand,polyder,polys[n],digits);
+        acb_poly_add(result,result,summand,digits);
+        acb_poly_derivative(polyder,polyder,digits);
+    }
+    for (slong n = acb_poly_degree(result); n >= 0; n--)
+    {
+        acb_get_abs_ubound_arf(absValue,acb_poly_get_coeff_ptr(result,n),digits);
+        if (arf_cmpabs_2exp_si(absValue,-digits*0.95) >= 0)
+        {
+            if (printed == 0)
+            {
+                printed = 1;
+                acb_poly_printd(ODE->series,10);
+                flint_printf("\n\n");
+            }
+            acb_printn(acb_poly_get_coeff_ptr(result,n),digits,ARB_STR_CONDENSE * 10);
+            flint_printf(" = a_%w\n",n);
+        }
+    }
+    acb_poly_clear(summand);
+    acb_poly_clear(polyder);
+    acb_poly_clear(result);
+    arf_clear(absValue);
+    return printed;
+}
+
 void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_ptr path, slong len, slong digits) {
     acb_mat_init(monodromy,order(ODE),order(ODE));
     if (monodromy == NULL) return; /* Further Error checking elsewhere */
@@ -206,58 +247,23 @@ void entry_point (ulong n, slong digits, slong z_val) {
     return;
 }
 
-int checkODE (acb_poly_struct **polys, acb_ode_t ODE, slong digits) {
-    acb_poly_t result, polyder, summand;
-    acb_poly_init(polyder);
-    acb_poly_init(summand);
-    acb_poly_init(result);
-
-    arf_t absValue;
-    arf_init(absValue);
-    int printed = 0;
-
-    acb_poly_set(polyder,ODE->series);
-    for (slong n = 0; n <= order(ODE); n++)
-    {
-        if (polys[n] == NULL)
-            continue;
-        acb_poly_mul(summand,polyder,polys[n],digits);
-        acb_poly_add(result,result,summand,digits);
-        acb_poly_derivative(polyder,polyder,digits);
-    }
-    for (slong n = acb_poly_degree(result); n >= 0; n--)
-    {
-        acb_get_abs_ubound_arf(absValue,acb_poly_get_coeff_ptr(result,n),digits);
-        if (arf_cmpabs_2exp_si(absValue,-digits*0.95) >= 0)
-        {
-            if (printed == 0)
-            {
-                printed = 1;
-                acb_poly_printd(ODE->series,10);
-                flint_printf("\n\n");
-            }
-            acb_printn(acb_poly_get_coeff_ptr(result,n),digits,ARB_STR_CONDENSE * 10);
-            flint_printf(" = a_%w\n",n);
-        }
-    }
-    acb_poly_clear(summand);
-    acb_poly_clear(polyder);
-    acb_poly_clear(result);
-    arf_clear(absValue);
-    return printed;
-}
-
 int main (int argc, char **argv) {
     ulong n =       (argc >= 2) ? atol(argv[1]) : 1;
     slong digits =  (argc >= 3) ? atol(argv[2]) : 100;
     slong z =       (argc >= 4) ? atol(argv[3]) : 1;
 
-    //entry_point(n,digits,z);
-    acb_poly_t polynomial;
-    parsePoly("1 -5j,0 +17.45j,-1 +0j",polynomial,digits);
-    acb_poly_printd(polynomial,10);
-    flint_printf("\n");
-    acb_poly_clear(polynomial);
+    //~ entry_point(n,digits,z);
+    slong numofpols;
+    acb_poly_struct **polys = acb_ode_fread(&numofpols,"data/odetest.txt",2,digits);
+    for (slong i = 0; i < numofpols; i++)
+    {
+        if (polys[i] == NULL)
+            continue;
+        acb_poly_printd(polys[i],10);
+        flint_printf("\n");
+        acb_poly_clear(polys[i]);
+    }
+    free(polys);
     flint_cleanup();
     return 0;
 }
