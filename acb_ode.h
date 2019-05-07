@@ -34,4 +34,8 @@ acb_ode_t acb_ode_copy (acb_ode_t ODE_out, acb_ode_t ODE_in);
 
 void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits);
 
+acb_poly_struct** acb_ode_fread(slong *numberOfPolynomials, const char *fileName, ulong maxOrder, slong bits);
+
+void parsePoly(char *polyString, acb_poly_struct *polyOut, slong bits);
+
 #endif

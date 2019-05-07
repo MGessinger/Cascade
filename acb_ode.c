@@ -130,3 +130,32 @@ void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits)
         }
     return;
 }
+
+void parsePoly(char *polyString, acb_poly_struct *polyOut, slong bits)
+{
+    acb_poly_init(polyOut);
+    acb_t coeff; acb_init(coeff);
+    
+    int numberOfBits = 0;
+    char realPart[256];
+    char imagPart[256];
+    realPart[0] = imagPart[0] = '\0';
+    slong index = 0;
+    
+    while(sscanf(polyString,"%[^, +] %[^j]j,%n",realPart,imagPart,&numberOfBits) != 0)
+    {
+        acb_zero(coeff);
+        if (realPart[0] != '\0')
+            arb_set_str(acb_realref(coeff),realPart,bits);
+        if (imagPart[0] != '\0')
+            arb_set_str(acb_imagref(coeff),imagPart,bits);
+        acb_poly_set_coeff_acb(polyOut,index,coeff);
+        index++;
+        realPart[0] = imagPart[0] = '\0';
+        polyString = polyString + numberOfBits;
+        if (polyString[0] == ',' || polyString[0] == '\0')
+            break;
+    }
+    acb_clear(coeff);
+    return;
+}

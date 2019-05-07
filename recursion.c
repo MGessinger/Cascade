@@ -10,8 +10,8 @@ void analytic_continuation (acb_t res, acb_ode_t ODE_in, acb_srcptr path, slong 
     acb_set(a,path);
     for (slong i = 1; i <= len; i++)
     {
-        acb_ode_shift(ODE,a);
-        acb_sub(a,path+(i%len),path+(i-1),bits); /* When i==len, wrap back around to the beginning */
+        acb_ode_shift(ODE,a,bits);
+        acb_sub(a,path+i,path+(i-1),bits);
         if (find_power_series_regular(res,ODE,a,bits) == 0)
             break;
         acb_poly_taylor_shift(ODE->series,ODE->series,a,bits);
@@ -34,7 +34,7 @@ void analytic_continuation (acb_t res, acb_ode_t ODE_in, acb_srcptr path, slong 
     if (output_series == TRUE)
         _acb_vec_set(res,acb_poly_get_coeff_ptr(ODE->series,0),order(ODE));
     else
-        flint_printf("It required a working precision of %w bits to reach the requested %w bits.\n\n",bits,digits);
+        flint_printf("It required a working precision of %w bits to reach the requested %w digits.\n\n",bits,digits/3.32193);
 
     acb_ode_clear(ODE);
     acb_clear(a);
@@ -170,17 +170,18 @@ void entry_point (ulong n, slong digits, slong z_val) {
     acb_mat_t monodromy;
 
     /* Path */
-    acb_ptr path = _acb_vec_init(steps);
+    acb_ptr path = _acb_vec_init(steps+1);
     for (slong i = 0; i < steps; i++) {
         acb_set_si(path+i,i);
         acb_div_ui(path+i,path+i,steps/2,digits);
         acb_exp_pi_i(path+i,path+i,steps/2*digits);
     }
+    acb_set(path+steps,path);
 
     acb_ode_t ODE = acb_ode_init(polys,NULL,z,n,digits);
     if (ODE != NULL)
     {
-        find_monodromy_matrix(monodromy,ODE,path,steps,digits);
+        find_monodromy_matrix(monodromy,ODE,path,steps+1,digits);
         if (monodromy == NULL)
             flint_printf("Could not allocate memory. Please try again.\n");
         else
@@ -251,6 +252,12 @@ int main (int argc, char **argv) {
     slong digits =  (argc >= 3) ? atol(argv[2]) : 100;
     slong z =       (argc >= 4) ? atol(argv[3]) : 1;
 
-    entry_point(n,digits,z);
+    //entry_point(n,digits,z);
+    acb_poly_t polynomial;
+    parsePoly("1 -5j,0 +17.45j,-1 +0j",polynomial,digits);
+    acb_poly_printd(polynomial,10);
+    flint_printf("\n");
+    acb_poly_clear(polynomial);
+    flint_cleanup();
     return 0;
 }
