@@ -1,6 +1,6 @@
 #include "acb_ode.h"
 
-short precondition(acb_poly_struct **polys, acb_ode_t ODE, acb_t z, slong prec) {
+short precondition (acb_poly_struct **polys, acb_ode_t ODE, acb_t z, slong prec) {
     /* Error Checking */
     if (polys == NULL) {
         flint_printf("Please provide defining polynomials.\n");
@@ -83,7 +83,7 @@ acb_ode_t acb_ode_init (acb_poly_struct **polys, acb_poly_t initial, acb_t z, sl
     return ODE;
 }
 
-void acb_ode_clear(acb_ode_t ODE) {
+void acb_ode_clear (acb_ode_t ODE) {
     if (ODE == NULL) return;
     for (int i = 0; i <= order(ODE); i++) {
         _acb_vec_clear((ODE->polys)[i],degree(ODE)+1);
@@ -94,7 +94,7 @@ void acb_ode_clear(acb_ode_t ODE) {
     return;
 }
 
-acb_ode_t acb_ode_copy(acb_ode_t ODE_out, acb_ode_t ODE_in) {
+acb_ode_t acb_ode_copy (acb_ode_t ODE_out, acb_ode_t ODE_in) {
     /* Copy data from ODE_in to an existing ODE structure or create a new one */
     if (ODE_out == NULL) {
         ODE_out = flint_malloc(sizeof(acb_ode_struct));
@@ -117,4 +117,16 @@ acb_ode_t acb_ode_copy(acb_ode_t ODE_out, acb_ode_t ODE_in) {
     }
     acb_poly_set(ODE_out->series,ODE_in->series);
     return ODE_out;
+}
+
+void acb_ode_shift (acb_ode_t ODE, acb_t a)
+{
+    if (degree(ODE) >= 1)
+        for (slong j = 0; j <= order(ODE); j++)
+        {
+            if (ODE->polys[j] == NULL)
+                continue;
+            _acb_poly_taylor_shift(ODE->polys[j],a,degree(ODE)+1,bits);
+        }
+    return;
 }

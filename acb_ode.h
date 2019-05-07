@@ -24,12 +24,14 @@ typedef struct acb_ode_struct {
 
 typedef acb_ode_struct* acb_ode_t;
 
-short precondition(acb_poly_struct **polys, acb_ode_t ODE, acb_t z, slong prec);
+short precondition (acb_poly_struct **polys, acb_ode_t ODE, acb_t z, slong prec);
 
 acb_ode_t acb_ode_init (acb_poly_struct **polys, acb_poly_t initial, acb_t z, slong order, slong prec);
 
-void acb_ode_clear(acb_ode_t ODE);
+void acb_ode_clear (acb_ode_t ODE);
 
-acb_ode_t acb_ode_copy(acb_ode_t ODE_out, acb_ode_t ODE_in);
+acb_ode_t acb_ode_copy (acb_ode_t ODE_out, acb_ode_t ODE_in);
+
+void acb_ode_shift (acb_ode_t ODE, acb_t a);
 
 #endif

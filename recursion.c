@@ -5,23 +5,19 @@ void analytic_continuation (acb_t res, acb_ode_t ODE_in, acb_srcptr path, slong 
     acb_ode_t ODE = acb_ode_copy(NULL,ODE_in);
     if (ODE == NULL) return;
     acb_t a; acb_init(a);
-    slong bits = digits/1.41, accuracy;
+    slong accuracy, bits = digits/1.414; /* Start with a much smaller value to get a good estimate very quickly */
 
     acb_set(a,path);
     for (slong i = 1; i <= len; i++)
     {
-        if (degree(ODE) >= 1)
-            for (slong j = 0; j <= order(ODE); j++)
-            {
-                if (ODE->polys[j] == NULL) continue;
-                _acb_poly_taylor_shift(ODE->polys[j],a,degree(ODE)+1,bits);
-            }
+        acb_ode_shift(ODE,a);
         acb_sub(a,path+(i%len),path+(i-1),bits); /* When i==len, wrap back around to the beginning */
         if (find_power_series_regular(res,ODE,a,bits) == 0)
             break;
         acb_poly_taylor_shift(ODE->series,ODE->series,a,bits);
         accuracy = acb_rel_accuracy_bits(res);
-        if (accuracy < digits && accuracy >= 0) /* If the precision of the result is not good enough, start over */
+        /* If the precision of the result is not good enough, start over */
+        if (accuracy < digits && accuracy >= 0)
         {
             flint_printf("Ran out of precision at %w bits. ", bits);
             flint_printf("Result dropped to a decimal-accuracy of %w at t = %w.\n",accuracy,i);
@@ -29,9 +25,9 @@ void analytic_continuation (acb_t res, acb_ode_t ODE_in, acb_srcptr path, slong 
             i = 0;
             bits += (digits-accuracy)+len; /* This has proven to be a good choice */
         }
-        if (bits >= len*digits)
+        if (bits >= 1.5*len*digits)
         {
-            flint_printf("Aborted. This does in no way make sense.\n");
+            flint_printf("The internal precision exceeded a reasonable bound. Aborting.\n");
             break;
         }
     }
