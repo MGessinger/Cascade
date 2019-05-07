@@ -70,13 +70,16 @@ ulong find_power_series_regular(acb_t out, acb_ode_t ODE, acb_t in, slong bits) 
         acb_zero(new_coeff);
         for (slong oldIndex = newIndex+order(ODE)-1; oldIndex >= 0; oldIndex--)
         {
+            if (newIndex - oldIndex > degree(ODE))
+                break;
             /* Ignore zero terms immediately: */
             if (acb_poly_get_coeff_ptr(ODE->series,oldIndex) == NULL)
                 continue;
             if (acb_is_zero(acb_poly_get_coeff_ptr(ODE->series,oldIndex)))
                 continue;
-            flint_printf("%w, ",oldIndex);
-            num_of_nonzero++;
+            acb_get_abs_ubound_arf(err,acb_poly_get_coeff_ptr(ODE->series,oldIndex),bits);
+            if (arf_cmpabs_2exp_si(err,-bits) >= 0)
+                num_of_nonzero++;
             acb_zero(temp);
             /* Loop through the polynomials */
             for (slong polyIndex = order(ODE); polyIndex >= 0; polyIndex--)
@@ -96,12 +99,6 @@ ulong find_power_series_regular(acb_t out, acb_ode_t ODE, acb_t in, slong bits) 
                     acb_mul_si(temp,temp,oldIndex - polyIndex + 1,bits);
             }
             acb_addmul(new_coeff,acb_poly_get_coeff_ptr(ODE->series,oldIndex),temp,bits);
-        }
-        flint_printf(" to find %w.\n",newIndex);
-        if (num_of_nonzero == 0)
-        {
-            printf("Zero!");
-            break;
         }
         /* Divide by the appropriate coefficients */
         acb_set_ui(temp,newIndex+1);
@@ -130,10 +127,11 @@ ulong find_power_series_regular(acb_t out, acb_ode_t ODE, acb_t in, slong bits) 
             newIndex = 0;
             break;
         }
-        if (acb_is_zero(temp)) /* Due to unprecise imaginary parts, this might not catch all zeroes. Try (x+2)y'' - y' - y = 0 */
+        /*if (acb_is_zero(temp)) Due to unprecise imaginary parts, this might not catch all zeroes. Try (x+2)y'' - y' - y = 0 
             continue;
         acb_get_abs_ubound_arf(err,temp,bits);
-    } while (arf_cmpabs_2exp_si(err,-bits) >= 0);
+    } while (arf_cmpabs_2exp_si(err,-bits) >= 0);*/
+    } while (num_of_nonzero != 0);
 
     if (out != NULL)
         acb_set(out,result);
@@ -169,9 +167,9 @@ void entry_point (ulong n, slong digits, slong z_val) {
     acb_poly_t pol0,pol1,pol2;
     acb_poly_init(pol0); acb_poly_init(pol1); acb_poly_init(pol2);
     polys[0] = pol0; polys[1] = pol1; polys[2] = pol2;
-    acb_poly_set_coeff_si(polys[2],1,1);
+    acb_poly_set_coeff_si(polys[2],2,1);
     acb_poly_set_coeff_si(polys[2],0,2);
-    acb_poly_set_coeff_si(polys[1],0,-1);
+    acb_poly_set_coeff_si(polys[1],1,-1);
     acb_poly_set_coeff_si(polys[0],0,-1);
 
     /* Input/Output */
@@ -224,7 +222,6 @@ int checkODE (acb_poly_struct **polys, acb_ode_t ODE, slong digits) {
 
     arf_t absValue;
     arf_init(absValue);
-    
     int printed = 0;
 
     acb_poly_set(polyder,ODE->series);
