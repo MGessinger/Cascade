@@ -94,26 +94,28 @@ void acb_ode_clear (acb_ode_t ODE) {
     return;
 }
 
-acb_ode_t acb_ode_copy (acb_ode_t ODE_out, acb_ode_t ODE_in) {
+acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in) {
     /* Copy data from ODE_in to an existing ODE structure or create a new one */
-    if (ODE_out == NULL) {
+    if (ODE_out == NULL)
+    {
         ODE_out = flint_malloc(sizeof(acb_ode_struct));
-        if (ODE_out == NULL) {
+        if (ODE_out == NULL)
+        {
             flint_printf("Initalisation of the differential equation failed. Please try again.\n");
             return NULL;
         }
         order(ODE_out) = order(ODE_in);
         degree(ODE_out) = degree(ODE_in);
         ODE_out->polys = flint_malloc((order(ODE_out)+1)*sizeof(acb_ptr));
-        for (slong i = 0; i <= order(ODE_out); i++) {
+        for (slong i = 0; i <= order(ODE_out); i++)
+        {
             (ODE_out->polys)[i] = _acb_vec_init(degree(ODE_out)+1);
         }
         acb_poly_init(ODE_out->series);
     }
-    for (slong i = 0; i <= order(ODE_out); i++) {
-        for (slong j = 0; j <= degree(ODE_out); j++) {
-            acb_set(diff_eq_coeff(ODE_out,i,j),diff_eq_coeff(ODE_in,i,j));
-        }
+    for (slong i = 0; i <= order(ODE_out); i++)
+    {
+        _acb_vec_set(diff_eq_poly(ODE_out,i),diff_eq_poly(ODE_in,i),degree(ODE_out)+1);
     }
     acb_poly_set(ODE_out->series,ODE_in->series);
     return ODE_out;
@@ -131,31 +133,126 @@ void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits)
     return;
 }
 
-void parsePoly(char *polyString, acb_poly_struct *polyOut, slong bits)
+acb_poly_struct** acb_ode_fread(slong *numberOfPolynomials, const char *fileName, ulong maxOrder, slong bits)
 {
-    acb_poly_init(polyOut);
+    if (maxOrder == 0)
+        maxOrder = UWORD_MAX;
+    FILE *input = fopen(fileName,"r");
+    if (input == NULL)
+    {
+        flint_printf("Could not open file %s. Please confirm input!\n",fileName);
+        return NULL;
+    }
+    char poly[512];
+    ulong derivative = 0;
+    if (flint_fscanf(input,"%*c%wu*",&derivative) == 0)
+    {
+        flint_printf("The file format is wrong. Please make sure to declare the degree of derivation first.\n");
+        return NULL;
+    }
+    *numberOfPolynomials = derivative;
+    if (derivative > maxOrder)
+    {
+        flint_printf("The order of the ODE was larger than allowed. Aborted.\n");
+        return NULL;
+    }
+    acb_poly_struct **polys = malloc((derivative+1)*sizeof(acb_poly_t));
+    if (polys == NULL)
+    {
+        flint_printf("Could not allocate memory. Please try again.\n");
+        return NULL;
+    }
+    do {
+        if (flint_fscanf(input,"(%[^)*])",poly) != 0)
+        {
+            parsePoly(polys[derivative],poly,bits);
+        }
+    } while (flint_fscanf(input,"%*[^a-z]%*c%wu",&derivative) != EOF);
+    return polys;
+}
+
+void parsePoly(acb_poly_struct *polyOut, char *polyString, slong bits)
+{
+    flint_printf("Parsing %s into a polynomial... ",polyString);
+    fflush(stdout);
+    if (polyOut == NULL)
+    {
+        flint_printf("The output polynomial is the NULL pointer. Please check your input.\n");
+        return;
+    }
     acb_t coeff; acb_init(coeff);
-    
+
     int numberOfBits = 0;
     char realPart[256];
     char imagPart[256];
     realPart[0] = imagPart[0] = '\0';
     slong index = 0;
-    
-    while(sscanf(polyString,"%[^, +] %[^j]j,%n",realPart,imagPart,&numberOfBits) != 0)
+
+    while(sscanf(polyString,"%[^, +] %[^j,]%*[j \n\t,]%n",realPart,imagPart,&numberOfBits) != 0)
     {
-        acb_zero(coeff);
         if (realPart[0] != '\0')
             arb_set_str(acb_realref(coeff),realPart,bits);
         if (imagPart[0] != '\0')
             arb_set_str(acb_imagref(coeff),imagPart,bits);
         acb_poly_set_coeff_acb(polyOut,index,coeff);
+
         index++;
         realPart[0] = imagPart[0] = '\0';
         polyString = polyString + numberOfBits;
         if (polyString[0] == ',' || polyString[0] == '\0')
             break;
     }
+    flint_printf("Done!\n");
     acb_clear(coeff);
     return;
 }
+
+acb_ode_t acb_ode_reduce (acb_ode_t ODE)
+{
+    if (ODE == NULL)
+        return NULL;
+    slong shift = 0;
+    slong reduced = 0;
+    acb_ode_t ODEfixed = NULL;
+    for (; shift <= order(ODE); shift++)
+    {
+        /* shift finds the number of leading Zero polynomials */
+        if (!_acb_vec_is_zero(diff_eq_poly(ODE,shift),degree(ODE)+1))
+        {
+            break;
+        }
+    }
+    if (shift != 0)
+    {
+        ODEfixed = acb_ode_set(NULL,ODE);
+        order(ODEfixed) -= shift;
+        for (slong i = 0; i <= order(ODEfixed); i++)
+            _acb_vec_set(diff_eq_poly(ODEfixed,i),diff_eq_poly(ODE,i+shift),degree(ODE)+1);
+        for (slong j = 1; j <= shift; j++)
+        {
+            _acb_vec_clear(diff_eq_poly(ODEfixed,j+order(ODEfixed)),degree(ODE)+1);
+        }
+    }
+
+    while (acb_is_zero(diff_eq_coeff(ODE,0,reduced)))
+    {
+        reduced++;
+    }
+    for (slong i = 1; i <= order(ODE); i++)
+    {
+        /* reduced finds the number of leading Zero coefficients */
+        if (reduced == 0)
+            break;
+        while (!acb_is_zero(diff_eq_coeff(ODE,i,reduced-1)))
+            reduced--;
+    }
+    if (reduced != 0)
+    {
+        if (ODEfixed == NULL)
+            ODEfixed = acb_ode_set(NULL,ODE);
+        for (slong i = 0; i<= order(ODE); i++)
+            _acb_poly_shift_right(diff_eq_poly(ODEfixed,i),diff_eq_poly(ODE,i),degree(ODE)+1,reduced);
+    }
+    return ODEfixed;
+}
+

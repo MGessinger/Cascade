@@ -12,8 +12,8 @@
 
 #define degree(ODE) ((ODE)->degree)
 #define order(ODE) ((ODE)->order)
-#define diff_eq_coeff(ODE,i,j) \
-    ((j) <= (degree(ODE)) ? (ODE)->polys[i] + (j) : NULL)
+#define diff_eq_coeff(ODE,i,j) ((ODE)->polys[i] + (j))
+#define diff_eq_poly(ODE,i) ((ODE)->polys[i])
 
 typedef struct acb_ode_struct {
     slong order;
@@ -30,12 +30,14 @@ acb_ode_t acb_ode_init (acb_poly_struct **polys, acb_poly_t initial, acb_t z, sl
 
 void acb_ode_clear (acb_ode_t ODE);
 
-acb_ode_t acb_ode_copy (acb_ode_t ODE_out, acb_ode_t ODE_in);
+acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in);
 
 void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits);
 
 acb_poly_struct** acb_ode_fread(slong *numberOfPolynomials, const char *fileName, ulong maxOrder, slong bits);
 
-void parsePoly(char *polyString, acb_poly_struct *polyOut, slong bits);
+void parsePoly(acb_poly_struct *polyOut, char *polyString, slong bits);
+
+acb_ode_t acb_ode_reduce (acb_ode_t ODE);
 
 #endif
