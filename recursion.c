@@ -32,7 +32,7 @@ ulong find_power_series_regular(acb_t out, acb_ode_t ODE, acb_t in, slong bits) 
             if (acb_is_zero(acb_poly_get_coeff_ptr(ODE->series,oldIndex)))
                 continue;
             acb_get_abs_ubound_arf(ubound,acb_poly_get_coeff_ptr(ODE->series,oldIndex),bits);
-            if (arf_cmp_2exp_si(ubound,-bits) > 0)
+            if (arf_cmp_2exp_si(ubound,-bits) >= 0)
                 num_of_nonzero++;
             acb_zero(temp);
             /* Loop through the polynomials */
@@ -97,13 +97,13 @@ ulong find_power_series_regular(acb_t out, acb_ode_t ODE, acb_t in, slong bits) 
 
 void analytic_continuation (acb_t res, acb_ode_t ODE_in, acb_srcptr path, slong len, slong digits, int output_series)
 {
-    acb_ode_t ODE = acb_ode_copy(NULL,ODE_in);
+    acb_ode_t ODE = acb_ode_set(NULL,ODE_in);
     if (ODE == NULL) return;
     acb_t a; acb_init(a);
     slong accuracy, bits = digits/1.414; /* Start with a much smaller value to get a good estimate very quickly */
 
     acb_set(a,path);
-    for (slong i = 1; i <= len; i++)
+    for (slong i = 1; i < len; i++)
     {
         acb_ode_shift(ODE,a,bits);
         acb_sub(a,path+i,path+(i-1),bits);
@@ -116,7 +116,7 @@ void analytic_continuation (acb_t res, acb_ode_t ODE_in, acb_srcptr path, slong 
         {
             flint_printf("Ran out of precision at %w bits. ", bits);
             flint_printf("Result dropped to a decimal-accuracy of %w at t = %w.\n",accuracy,i);
-            ODE = acb_ode_copy(ODE,ODE_in);
+            ODE = acb_ode_set(ODE,ODE_in);
             i = 0;
             bits += (digits-accuracy)+len; /* This has proven to be a good choice */
         }
@@ -136,7 +136,7 @@ void analytic_continuation (acb_t res, acb_ode_t ODE_in, acb_srcptr path, slong 
     return;
 }
 
-int checkODE (acb_poly_struct **polys, acb_ode_t ODE, slong digits) {
+int checkODE (acb_poly_t *polys, acb_ode_t ODE, slong digits) {
     acb_poly_t result, polyder, summand;
     acb_poly_init(polyder);
     acb_poly_init(summand);
@@ -189,23 +189,15 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_ptr path, sl
     return;
 }
 
-void entry_point (ulong n, slong digits, slong z_val) {
+void entry_point (ulong maxOrder, slong digits, slong z_val, const char *file) {
     digits = digits*3.32193; /* Multiply by log_2(10) to obtain the number of binary digits */
     slong steps = 128;
-    if (n == 0 || n >= 100) /* If n >= 100, that must be an error! */
-        return;
 
     /* Polynomials */
-    acb_poly_struct **polys = flint_malloc((n+1)*sizeof(acb_poly_t));
-    for (ulong i = 0; i <= n; i++) polys[i] = NULL;
-
-    acb_poly_t pol0,pol1,pol2;
-    acb_poly_init(pol0); acb_poly_init(pol1); acb_poly_init(pol2);
-    polys[0] = pol0; polys[1] = pol1; polys[2] = pol2;
-    acb_poly_set_coeff_si(polys[2],1,1);
-    acb_poly_set_coeff_si(polys[2],0,2);
-    acb_poly_set_coeff_si(polys[1],0,-1);
-    acb_poly_set_coeff_si(polys[0],0,-1);
+    ulong numOfPols;
+    acb_poly_t *polys = acb_ode_fread(&numOfPols,file,maxOrder,10*digits);
+    if (polys == NULL)
+        return;
 
     /* Input/Output */
     acb_t res, z;
@@ -222,51 +214,36 @@ void entry_point (ulong n, slong digits, slong z_val) {
     }
     acb_set(path+steps,path);
 
-    acb_ode_t ODE = acb_ode_init(polys,NULL,z,n,digits);
-    //~ if (ODE != NULL)
-    //~ {
-        //~ find_monodromy_matrix(monodromy,ODE,path,steps+1,digits);
-        //~ if (monodromy == NULL)
-            //~ flint_printf("Could not allocate memory. Please try again.\n");
-        //~ else
-        //~ {
-            //~ acb_mat_printd(monodromy,7);
-            //~ acb_mat_clear(monodromy);
-        //~ }
-    //~ }
-    acb_poly_set_coeff_si(ODE->series,1,1);
-    acb_poly_set_coeff_si(ODE->series,0,1);
-    find_power_series_regular(res,ODE,z,digits);
-    checkODE(polys,ODE,digits);
+    acb_ode_t ODE = acb_ode_init(polys,NULL,z,numOfPols,digits);
+    if (ODE != NULL)
+    {
+        find_monodromy_matrix(monodromy,ODE,path,steps+1,digits);
+        if (monodromy == NULL)
+            flint_printf("Could not allocate memory. Please try again.\n");
+        else
+        {
+            acb_mat_printd(monodromy,7);
+            acb_mat_clear(monodromy);
+        }
+    }
 
-    for (ulong i = 0; i <= n; i++)
+    for (ulong i = 0; i <= numOfPols; i++)
         if (polys[i] != NULL)
             acb_poly_clear(polys[i]);
     flint_free(polys);
     acb_ode_clear(ODE);
     acb_clear(res); acb_clear(z);
-    _acb_vec_clear(path,steps);
+    _acb_vec_clear(path,steps+1);
     flint_cleanup();
     return;
 }
 
 int main (int argc, char **argv) {
-    ulong n =       (argc >= 2) ? atol(argv[1]) : 1;
-    slong digits =  (argc >= 3) ? atol(argv[2]) : 100;
-    slong z =       (argc >= 4) ? atol(argv[3]) : 1;
+    ulong n =       (argc >= 3) ? atol(argv[2]) : 1;
+    slong digits =  (argc >= 4) ? atol(argv[3]) : 100;
+    slong z =       (argc >= 5) ? atol(argv[4]) : 1;
 
-    entry_point(n,digits,z);
-    //~ slong numofpols;
-    //~ acb_poly_struct **polys = acb_ode_fread(&numofpols,"data/odetest.txt",2,digits);
-    //~ for (slong i = 0; i < numofpols; i++)
-    //~ {
-        //~ if (polys[i] == NULL)
-            //~ continue;
-        //~ acb_poly_printd(polys[i],10);
-        //~ flint_printf("\n");
-        //~ acb_poly_clear(polys[i]);
-    //~ }
-    //~ free(polys);
+    entry_point(n,digits,z,argv[1]);
     flint_cleanup();
     return 0;
 }

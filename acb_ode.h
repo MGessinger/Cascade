@@ -24,9 +24,9 @@ typedef struct acb_ode_struct {
 
 typedef acb_ode_struct* acb_ode_t;
 
-short precondition (acb_poly_struct **polys, acb_ode_t ODE, acb_t z, slong prec);
+short precondition (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong prec);
 
-acb_ode_t acb_ode_init (acb_poly_struct **polys, acb_poly_t initial, acb_t z, slong order, slong prec);
+acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, acb_t z, slong order, slong prec);
 
 void acb_ode_clear (acb_ode_t ODE);
 
@@ -34,9 +34,9 @@ acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in);
 
 void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits);
 
-acb_poly_struct** acb_ode_fread(slong *numberOfPolynomials, const char *fileName, ulong maxOrder, slong bits);
+acb_poly_t* acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits);
 
-void parsePoly(acb_poly_struct *polyOut, char *polyString, slong bits);
+void parsePoly(acb_poly_t polyOut, char *polyString, slong bits);
 
 acb_ode_t acb_ode_reduce (acb_ode_t ODE);
 

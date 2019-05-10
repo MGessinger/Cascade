@@ -1,6 +1,6 @@
 #include "acb_ode.h"
 
-short precondition (acb_poly_struct **polys, acb_ode_t ODE, acb_t z, slong prec) {
+short precondition (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong prec) {
     /* Error Checking */
     if (polys == NULL) {
         flint_printf("Please provide defining polynomials.\n");
@@ -56,7 +56,7 @@ short precondition (acb_poly_struct **polys, acb_ode_t ODE, acb_t z, slong prec)
     return convergent;
 }
 
-acb_ode_t acb_ode_init (acb_poly_struct **polys, acb_poly_t initial, acb_t z, slong order, slong prec) {
+acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, acb_t z, slong order, slong prec) {
     /* Prepare the Differential equation for later use */
     acb_ode_t ODE = flint_malloc(sizeof(acb_ode_struct));
     if (ODE == NULL) {
@@ -133,7 +133,7 @@ void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits)
     return;
 }
 
-acb_poly_struct** acb_ode_fread(slong *numberOfPolynomials, const char *fileName, ulong maxOrder, slong bits)
+acb_poly_t* acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits)
 {
     if (maxOrder == 0)
         maxOrder = UWORD_MAX;
@@ -144,37 +144,40 @@ acb_poly_struct** acb_ode_fread(slong *numberOfPolynomials, const char *fileName
         return NULL;
     }
     char poly[512];
-    ulong derivative = 0;
-    if (flint_fscanf(input,"%*c%wu*",&derivative) == 0)
+    long unsigned derivative = 0;
+    if (fscanf(input,"%*c%lu*(",&derivative) == 0)
     {
         flint_printf("The file format is wrong. Please make sure to declare the degree of derivation first.\n");
+        fclose(input);
         return NULL;
     }
-    *numberOfPolynomials = derivative;
+    *numberOfPols = derivative;
     if (derivative > maxOrder)
     {
         flint_printf("The order of the ODE was larger than allowed. Aborted.\n");
+        fclose(input);
         return NULL;
     }
-    acb_poly_struct **polys = malloc((derivative+1)*sizeof(acb_poly_t));
+    acb_poly_t *polys = malloc((derivative+1)*sizeof(acb_poly_t));
     if (polys == NULL)
     {
         flint_printf("Could not allocate memory. Please try again.\n");
+        fclose(input);
         return NULL;
     }
+    for (ulong i = 0; i <= *numberOfPols; i++)
+        acb_poly_init(polys[i]);
     do {
-        if (flint_fscanf(input,"(%[^)*])",poly) != 0)
-        {
+        if (fscanf(input,"%[^)*]",poly) != 0)
             parsePoly(polys[derivative],poly,bits);
-        }
-    } while (flint_fscanf(input,"%*[^a-z]%*c%wu",&derivative) != EOF);
+    } while (fscanf(input,"%*[^a-z]%*c%lu*(",&derivative) != EOF);
+    fclose(input);
     return polys;
 }
 
-void parsePoly(acb_poly_struct *polyOut, char *polyString, slong bits)
+void parsePoly(acb_poly_t polyOut, char *polyString, slong bits)
 {
     flint_printf("Parsing %s into a polynomial... ",polyString);
-    fflush(stdout);
     if (polyOut == NULL)
     {
         flint_printf("The output polynomial is the NULL pointer. Please check your input.\n");
