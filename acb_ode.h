@@ -6,9 +6,9 @@
 #define ACB_ODE_H
 
 #define INVALID_DATA (-1)
-#define ORDINARY (0)
-#define NON_CONVERGENT (1)
-#define SINGULAR (2)
+#define NON_CONVERGENT (0)
+#define SINGULAR (1)
+#define ORDINARY (2)
 
 #define degree(ODE) ((ODE)->degree)
 #define order(ODE) ((ODE)->order)
@@ -36,8 +36,10 @@ void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits);
 
 acb_poly_t* acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits);
 
-void parsePoly(acb_poly_t polyOut, char *polyString, slong bits);
+void parsePoly(acb_poly_t polyOut, const char *polyString, slong strLength, slong bits);
 
-acb_ode_t acb_ode_reduce (acb_ode_t ODE);
+acb_ode_t acb_ode_simplify(acb_ode_t ODE);
+
+slong acb_ode_reduce (acb_ode_t ODE);
 
 #endif

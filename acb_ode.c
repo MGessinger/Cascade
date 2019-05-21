@@ -19,7 +19,7 @@ short precondition (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong prec) {
     }
     order(ODE) = ord;
     degree(ODE) = polyMaxLength;
-    if (ord <= 0)
+    if (ord <= 0 || polyMaxLength <= 0)
     {
         flint_printf("The order of the differential equation has to be positive.\n");
         return INVALID_DATA;
@@ -38,22 +38,9 @@ short precondition (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong prec) {
         if (getchar() != 'y')
             return SINGULAR;
     }
-
-    /* Check if the series expansion converges */
-    acb_ptr polyder = _acb_vec_init(acb_poly_degree(polys[ord]));
-    _acb_poly_derivative(polyder,polys[ord]->coeffs,acb_poly_degree(polys[ord])+1,prec);
-    _acb_poly_root_inclusion(r, m, acb_poly_get_coeff_ptr(polys[ord],0), polyder, acb_poly_degree(polys[ord])+1, prec);
-    int convergent = ORDINARY;
-    if (!acb_is_exact(r) && !acb_contains(r,z))
-    {
-        convergent = NON_CONVERGENT;
-        flint_printf("There is definitely a root in the way. We have an enclosure of \n");
-        acb_printn(r,prec,0); flint_printf(" and we are evaluating at "); acb_printn(z,5,0); flint_printf("\n");
-    }
-    _acb_vec_clear(polyder,acb_poly_degree(polys[ord]));
     acb_clear(r);
     acb_clear(m);
-    return convergent;
+    return ORDINARY;
 }
 
 acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, acb_t z, slong order, slong prec) {
@@ -80,6 +67,8 @@ acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, acb_t z, slong or
     acb_poly_init(ODE->series);
     if (initial != NULL)
         acb_poly_set(ODE->series,initial);
+    /* If possible, simplify the equation */
+    acb_ode_reduce(ODE);
     return ODE;
 }
 
@@ -145,6 +134,7 @@ acb_poly_t* acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOr
     }
     char poly[512];
     long unsigned derivative = 0;
+    int length = 0;
     if (fscanf(input,"%*c%lu*(",&derivative) == 0)
     {
         flint_printf("The file format is wrong. Please make sure to declare the degree of derivation first.\n");
@@ -168,16 +158,21 @@ acb_poly_t* acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOr
     for (ulong i = 0; i <= *numberOfPols; i++)
         acb_poly_init(polys[i]);
     do {
-        if (fscanf(input,"%[^)*]",poly) != 0)
-            parsePoly(polys[derivative],poly,bits);
+        if (fscanf(input,"%[^)*]%n",poly,&length) != 0)
+            parsePoly(polys[derivative],poly,length,bits);
     } while (fscanf(input,"%*[^a-z]%*c%lu*(",&derivative) != EOF);
     fclose(input);
     return polys;
 }
 
-void parsePoly(acb_poly_t polyOut, char *polyString, slong bits)
+void parsePoly(acb_poly_t polyOut, const char *polyString, const slong strLength, slong bits)
 {
-    flint_printf("Parsing %s into a polynomial... ",polyString);
+    if (strLength == 0 || polyString[0] == '\0')
+    {
+        acb_poly_zero(polyOut);
+        return;
+    }
+    flint_printf("Parsing %s into a polynomial... ",polyString,strLength);
     if (polyOut == NULL)
     {
         flint_printf("The output polynomial is the NULL pointer. Please check your input.\n");
@@ -185,37 +180,49 @@ void parsePoly(acb_poly_t polyOut, char *polyString, slong bits)
     }
     acb_t coeff; acb_init(coeff);
 
-    int numberOfBits = 0;
-    char realPart[256];
-    char imagPart[256];
-    realPart[0] = imagPart[0] = '\0';
+    int lengthOfReal = 0, lengthOfImag;
+    char realPart[128];
+    char imagPart[128];
+    slong totalLength = 0;
     slong index = 0;
 
-    while(sscanf(polyString,"%[^, +] %[^j,]%*[j \n\t,]%n",realPart,imagPart,&numberOfBits) != 0)
+    while (totalLength < strLength)
     {
-        if (realPart[0] != '\0')
+        acb_zero(coeff);
+        lengthOfReal = lengthOfImag = 0;
+        if (sscanf(polyString+totalLength,"%[^, +]%n",realPart,&lengthOfReal) != 0)
+        {
             arb_set_str(acb_realref(coeff),realPart,bits);
-        if (imagPart[0] != '\0')
-            arb_set_str(acb_imagref(coeff),imagPart,bits);
-        acb_poly_set_coeff_acb(polyOut,index,coeff);
-
-        index++;
-        realPart[0] = imagPart[0] = '\0';
-        polyString = polyString + numberOfBits;
-        if (polyString[0] == ',' || polyString[0] == '\0')
+            totalLength += lengthOfReal;
+            acb_poly_set_coeff_acb(polyOut,index,coeff);
+        }
+        if (totalLength >= strLength)
             break;
+        if (sscanf(polyString+totalLength,"%*[ +]%[^j,]j%n",imagPart,&lengthOfImag) != 0)
+        {
+            if (lengthOfImag != 0)
+            {
+                arb_set_str(acb_imagref(coeff),imagPart,bits);
+                totalLength += lengthOfImag;
+                acb_poly_set_coeff_acb(polyOut,index,coeff);
+            }
+        }
+        sscanf(polyString+totalLength,"%*[, +]%n",&lengthOfReal);
+        totalLength += lengthOfReal;
+        index++;
     }
     flint_printf("Done!\n");
+    acb_poly_printd(polyOut,10);
+    flint_printf("\n");
     acb_clear(coeff);
     return;
 }
 
-acb_ode_t acb_ode_reduce (acb_ode_t ODE)
+acb_ode_t acb_ode_simplify(acb_ode_t ODE)
 {
     if (ODE == NULL)
         return NULL;
     slong shift = 0;
-    slong reduced = 0;
     acb_ode_t ODEfixed = NULL;
     for (; shift <= order(ODE); shift++)
     {
@@ -236,7 +243,15 @@ acb_ode_t acb_ode_reduce (acb_ode_t ODE)
             _acb_vec_clear(diff_eq_poly(ODEfixed,j+order(ODEfixed)),degree(ODE)+1);
         }
     }
+    return ODEfixed;
+}
 
+slong acb_ode_reduce (acb_ode_t ODE)
+{
+    /* Divides all polynomial by x^n, if they share such a factor */
+    if (ODE == NULL)
+        return 0;
+    slong reduced = 0;
     while (acb_is_zero(diff_eq_coeff(ODE,0,reduced)))
     {
         reduced++;
@@ -251,11 +266,9 @@ acb_ode_t acb_ode_reduce (acb_ode_t ODE)
     }
     if (reduced != 0)
     {
-        if (ODEfixed == NULL)
-            ODEfixed = acb_ode_set(NULL,ODE);
         for (slong i = 0; i<= order(ODE); i++)
-            _acb_poly_shift_right(diff_eq_poly(ODEfixed,i),diff_eq_poly(ODE,i),degree(ODE)+1,reduced);
+            _acb_poly_shift_right(diff_eq_poly(ODE,i),diff_eq_poly(ODE,i),degree(ODE)+1,reduced);
     }
-    return ODEfixed;
+    return reduced;
 }
 
