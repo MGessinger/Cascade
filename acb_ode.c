@@ -172,12 +172,12 @@ void parsePoly(acb_poly_t polyOut, const char *polyString, const slong strLength
         acb_poly_zero(polyOut);
         return;
     }
-    flint_printf("Parsing %s into a polynomial... ",polyString,strLength);
     if (polyOut == NULL)
     {
         flint_printf("The output polynomial is the NULL pointer. Please check your input.\n");
         return;
     }
+    flint_printf("Parsing %s into a polynomial... ",polyString,strLength);
     acb_t coeff; acb_init(coeff);
 
     int lengthOfReal = 0, lengthOfImag;
@@ -212,8 +212,6 @@ void parsePoly(acb_poly_t polyOut, const char *polyString, const slong strLength
         index++;
     }
     flint_printf("Done!\n");
-    acb_poly_printd(polyOut,10);
-    flint_printf("\n");
     acb_clear(coeff);
     return;
 }
@@ -271,4 +269,3 @@ slong acb_ode_reduce (acb_ode_t ODE)
     }
     return reduced;
 }
-
