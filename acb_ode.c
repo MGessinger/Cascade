@@ -1,6 +1,6 @@
 #include "acb_ode.h"
 
-short precondition (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong prec) {
+short precondition (acb_poly_t *polys, acb_ode_t ODE) {
     /* Error Checking */
     if (polys == NULL) {
         flint_printf("Please provide defining polynomials.\n");
@@ -25,25 +25,10 @@ short precondition (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong prec) {
         return INVALID_DATA;
     }
     flint_printf("The polynomials have degree at most %wd .\n",polyMaxLength-1);
-    if (z == NULL)
-        return ORDINARY;
-
-    /* Check if z is a singular point (regularity is elsewhere) */
-    acb_t r; acb_init(r);
-    acb_t m; acb_init(m);
-    acb_poly_evaluate(r,polys[ord],m,prec);
-    if (acb_is_zero(r))
-    {
-        flint_printf("Warning. This is a singular point. Proceed? (y/n)\n");
-        if (getchar() != 'y')
-            return SINGULAR;
-    }
-    acb_clear(r);
-    acb_clear(m);
     return ORDINARY;
 }
 
-acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, acb_t z, slong order, slong prec) {
+acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order) {
     /* Prepare the Differential equation for later use */
     acb_ode_t ODE = flint_malloc(sizeof(acb_ode_struct));
     if (ODE == NULL) {
@@ -51,7 +36,7 @@ acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, acb_t z, slong or
         return NULL;
     }
     order(ODE) = order;
-    int ode_case = precondition(polys,ODE,z,prec);
+    int ode_case = precondition(polys,ODE);
     if (ode_case != ORDINARY) {
         flint_free(ODE);
         return NULL;
@@ -67,8 +52,6 @@ acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, acb_t z, slong or
     acb_poly_init(ODE->series);
     if (initial != NULL)
         acb_poly_set(ODE->series,initial);
-    /* If possible, simplify the equation */
-    acb_ode_reduce(ODE);
     return ODE;
 }
 
@@ -246,21 +229,23 @@ acb_ode_t acb_ode_simplify(acb_ode_t ODE)
 
 slong acb_ode_reduce (acb_ode_t ODE)
 {
-    /* Divides all polynomial by x^n, if they share such a factor */
+    /* Divides all polynomials by z^n, if they share such a factor */
     if (ODE == NULL)
         return 0;
     slong reduced = 0;
-    while (acb_is_zero(diff_eq_coeff(ODE,0,reduced)))
+    while (acb_is_zero(diff_eq_coeff(ODE,order(ODE),reduced)))
     {
         reduced++;
     }
-    for (slong i = 1; i <= order(ODE); i++)
+    for (slong i = 0; i < order(ODE); i++)
     {
         /* reduced finds the number of leading Zero coefficients */
-        if (reduced == 0)
-            break;
-        while (!acb_is_zero(diff_eq_coeff(ODE,i,reduced-1)))
-            reduced--;
+        for (slong j = 0; j < reduced; j++)
+            if(!acb_is_zero(diff_eq_coeff(ODE,i,j)))
+            {
+                reduced = j;
+                break;
+            }
     }
     if (reduced != 0)
     {

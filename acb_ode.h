@@ -24,9 +24,9 @@ typedef struct acb_ode_struct {
 
 typedef acb_ode_struct* acb_ode_t;
 
-short precondition (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong prec);
+short precondition (acb_poly_t *polys, acb_ode_t ODE);
 
-acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, acb_t z, slong order, slong prec);
+acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order);
 
 void acb_ode_clear (acb_ode_t ODE);
 
