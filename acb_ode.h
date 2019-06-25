@@ -1,9 +1,8 @@
-#include <acb.h>
-#include <acb_poly.h>
-#include <acb_calc.h>
-
 #ifndef ACB_ODE_H
 #define ACB_ODE_H
+
+#include <acb.h>
+#include <acb_poly.h>
 
 #define INVALID_DATA (-1)
 #define NON_CONVERGENT (0)
@@ -19,7 +18,7 @@ typedef struct acb_ode_struct {
     slong order;
     slong degree;
     acb_struct **polys;
-    acb_poly_t series;
+    acb_poly_t solution;
 } acb_ode_struct;
 
 typedef acb_ode_struct* acb_ode_t;
