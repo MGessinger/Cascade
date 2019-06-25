@@ -1,6 +1,7 @@
 #include "acb_ode.h"
 
-short precondition (acb_poly_t *polys, acb_ode_t ODE) {
+short precondition (acb_poly_t *polys, acb_ode_t ODE)
+{
     /* Exception handling */
     if (polys == NULL)
     {
@@ -27,23 +28,29 @@ short precondition (acb_poly_t *polys, acb_ode_t ODE) {
     return ORDINARY;
 }
 
-acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order) {
+acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order)
+{
     /* Prepare the Differential equation for later use */
     acb_ode_t ODE = flint_malloc(sizeof(acb_ode_struct));
-    if (ODE == NULL) {
+    if (ODE == NULL)
+    {
         flint_printf("Initalisation of the differential equation failed. Please try again.\n");
         return NULL;
     }
     order(ODE) = order;
-    if (precondition(polys,ODE) != ORDINARY) {
+    if (precondition(polys,ODE) != ORDINARY)
+    {
         flint_free(ODE);
         return NULL;
     }
     ODE->polys = flint_malloc((order(ODE)+1)*sizeof(acb_ptr));
-    for (slong i = 0; i <= order(ODE); i++) {
+    for (slong i = 0; i <= order(ODE); i++)
+    {
         diff_eq_poly(ODE,i) = _acb_vec_init(degree(ODE)+1);
-        if (polys[i] == NULL) continue;
-        for (slong j = 0; j <= acb_poly_degree(polys[i]); j++) {
+        if (polys[i] == NULL)
+            continue;
+        for (slong j = 0; j <= acb_poly_degree(polys[i]); j++)
+        {
             acb_poly_get_coeff_acb(diff_eq_coeff(ODE,i,j),polys[i],j);
         }
     }
@@ -53,9 +60,11 @@ acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order) {
     return ODE;
 }
 
-void acb_ode_clear (acb_ode_t ODE) {
+void acb_ode_clear (acb_ode_t ODE)
+{
     if (ODE == NULL) return;
-    for (int i = 0; i <= order(ODE); i++) {
+    for (int i = 0; i <= order(ODE); i++)
+    {
         _acb_vec_clear((ODE->polys)[i],degree(ODE)+1);
     }
     flint_free(ODE->polys);
@@ -64,7 +73,8 @@ void acb_ode_clear (acb_ode_t ODE) {
     return;
 }
 
-acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in) {
+acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in)
+{
     /* Copy data from ODE_in to an existing ODE structure or create a new one */
     if (ODE_out == NULL)
     {
