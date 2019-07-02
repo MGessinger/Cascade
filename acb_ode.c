@@ -9,22 +9,22 @@ short precondition (acb_poly_t *polys, acb_ode_t ODE)
         return INVALID_DATA;
     }
     /* Find the highest degree amongst the given polynomials */
-    slong polyMaxLength = 0, ord = order(ODE);
+    slong polyMaxDeg = 0, ord = order(ODE);
     while (polys[ord] == NULL || acb_poly_is_zero(polys[ord]))
         ord--;
     for (slong i = 0; i <= ord; i++)
     {
-        if (polyMaxLength < acb_poly_length(polys[i]))
-            polyMaxLength = acb_poly_length(polys[i]);
+        if (polyMaxDeg < acb_poly_degree(polys[i]))
+            polyMaxDeg = acb_poly_degree(polys[i]);
     }
     order(ODE) = ord;
-    degree(ODE) = polyMaxLength;
-    if (ord <= 0 || polyMaxLength <= 0)
+    degree(ODE) = polyMaxDeg;
+    if (ord <= 0 || polyMaxDeg <= 0)
     {
         flint_printf("The order of the differential equation has to be positive.\n");
         return INVALID_DATA;
     }
-    flint_printf("The polynomials have degree at most %wd .\n",polyMaxLength-1);
+    flint_printf("The polynomials have degree at most %wd .\n",polyMaxDeg);
     return ORDINARY;
 }
 

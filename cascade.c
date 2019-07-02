@@ -58,10 +58,10 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits) {
                     polyIndex = degree(ODE) + oldIndex - newIndex;
                 if (polyIndex > oldIndex)
                     polyIndex = oldIndex;
-                if (polyIndex + newIndex - oldIndex < 0)
-                    break;
+                if (polyIndex + newIndex - oldIndex >= 0)
+                    acb_add(temp,temp,diff_eq_coeff(ODE,polyIndex,polyIndex+newIndex-oldIndex),bits);
 
-                acb_add(temp,temp,diff_eq_coeff(ODE,polyIndex,polyIndex+newIndex-oldIndex),bits);
+
                 if (polyIndex != 0)
                     acb_mul_si(temp,temp,oldIndex - polyIndex + 1,bits);
             }
@@ -109,13 +109,14 @@ void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len
 {
     acb_t a; acb_init(a);
     slong time = 0;
-    
+
     /* Evaluate a solution along the given piecewise linear path */
     acb_set(a,path);
     for (; time+1 < len; time++)
     {
         acb_ode_shift(ODE,a,bits);
         acb_sub(a,path+time+1,path+time,bits);
+        acb_poly_truncate(ODE->solution,order(ODE));
         if (find_power_series(ODE,a,bits) == 0)
         {
             flint_printf("The power series expansion did not converge from ");
@@ -126,11 +127,9 @@ void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len
             break;
         }
         acb_poly_taylor_shift(ODE->solution,ODE->solution,a,bits);
-        acb_poly_truncate(ODE->solution,order(ODE)+1);
     }
     /* Move it back to the point of origin */
-    flint_printf("time = %w, len = %w\n",time,len);
-    acb_neg(a,path+time);
+    acb_neg(a,path+time-1);
     acb_ode_shift(ODE,a,bits);
     if (output_solution == TRUE)
     {
@@ -169,7 +168,7 @@ int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits) {
     {
         incorrect = 1;
         flint_printf("The differential equation has not been solved correctly. These are the coefficients:\n");
-        acb_poly_printd(result,10);
+        acb_poly_printd(ODE->solution,10);
         flint_printf("\n, which evaluates to ");
         mag_print(absValue);
         flint_printf(" at ");
@@ -216,7 +215,7 @@ void acb_ode_dump(acb_ode_t ODE)
     flint_fprintf(out,"Order: %w\nDegree: %w\n",order(ODE),degree(ODE));
     for (slong i = 0; i <= order(ODE); i++)
     {
-        for (slong j = 0; j < degree(ODE); j++)
+        for (slong j = 0; j <= degree(ODE); j++)
         {
             acb_fprintd(out,diff_eq_coeff(ODE,i,j),10);
             flint_fprintf(out,"\t");
@@ -231,7 +230,7 @@ void acb_ode_dump(acb_ode_t ODE)
 
 void entry_point (const ulong maxOrder, slong bits, double z_val, const char *file) {
     bits = bits*3.32193 + 5;
-    slong steps = 16;
+    slong steps = 128;
 
     ulong numOfPols;
     acb_poly_t *polys = acb_ode_fread(&numOfPols,file,maxOrder,10*bits);
@@ -256,12 +255,10 @@ void entry_point (const ulong maxOrder, slong bits, double z_val, const char *fi
     acb_ode_t ODE = acb_ode_init(polys,NULL,numOfPols);
     if (ODE != NULL)
     {
-        /*acb_poly_set_coeff_si(ODE->solution,0,1);
-        find_power_series(ODE,z,bits);
-        checkODE(polys,ODE,z,bits);*/
-        TIMEIT_ONCE_START
+        //~ acb_poly_set_coeff_si(ODE->solution,0,1);
+        //~ find_power_series(ODE,z,bits);
+        //~ checkODE(polys,ODE,z,bits);
         find_monodromy_matrix(monodromy,ODE,path,steps+1,bits);
-        TIMEIT_ONCE_STOP
         if (monodromy == NULL)
             flint_printf("Could not allocate memory. Please try again.\n");
         else

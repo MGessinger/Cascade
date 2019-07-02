@@ -4,7 +4,6 @@
 #include <acb_poly.h>
 #include <acb_mat.h>
 #include "acb_ode.h"
-#include "flint/profiler.h"
 
 #define TRUE 1
 
