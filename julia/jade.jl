@@ -2,7 +2,7 @@ module Jade
 
 using Nemo
 
-global Pol = PolyElem{acb}
+global const Pol = PolyElem{acb}
 
 export acb_ode,monodromy,powerSeries,translateC,deleteC,setPolynomial,setInitialValues
 
@@ -18,7 +18,7 @@ function __init__()
     print("  |  _  __  ,__ \n")
     print("  | |_| | \\ |__ \n")
     print("\\_/ | | |_/ |__ \n")
-	print("\nThis is JADE v.0.1, an interface to CASCADE,\n\n")
+	print("\nThis is JADE v.0.3, an interface to CASCADE,\n\n")
     print("The C-Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations!\n")
 end
 
@@ -131,9 +131,11 @@ function monodromy(ode::acb_ode)
     if ode.odeC == Ptr{nothing}(0)
         translateC(ode);
     end
-    precision = ode.polys[1].parent.base_ring.prec
-    mono = ccall((:find_monodromy_julia,"libcascade"),acb_mat,(Ptr{nothing},Cint),ode.odeC,precision)
-    mono.base_ring = ode.polys[1].parent.base_ring
+    Ring = ode.polys[1].parent.base_ring
+	S = MatrixSpace(Ring,ode.order,ode.order)
+    mono = S(0)
+    ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ptr{nothing},acb_mat,Cint),ode.odeC,mono,Ring.prec)
+    mono.base_ring = Ring
     return mono
 end
 

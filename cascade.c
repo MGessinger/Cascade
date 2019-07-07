@@ -18,10 +18,22 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits) {
     acb_one(power);
 
     slong num_of_nonzero;
-    slong realError, imagError;
+    slong realError = 0, imagError = 0;
     slong newIndex = 0;
+    for (int oldIndex = 0; oldIndex < order(ODE); oldIndex++)
+    {
+        acb_poly_get_coeff_acb(oldCoeff,ODE->solution,oldIndex);
+        if (realError < arb_rel_error_bits(acb_realref(oldCoeff)))
+            realError = arb_rel_error_bits(acb_realref(oldCoeff));
+        if (realError < convergence_tolerance*bits)
+            realError = convergence_tolerance*bits;
+
+        if (imagError < arb_rel_error_bits(acb_imagref(oldCoeff)))
+            imagError = arb_rel_error_bits(acb_imagref(oldCoeff));
+        if (imagError < convergence_tolerance*bits)
+            imagError = convergence_tolerance*bits;
+    }
     do {
-        realError = imagError = 0;
         num_of_nonzero = 0;
         acb_zero(newCoeff);
         slong minIndex = (newIndex > degree(ODE)) ? newIndex - degree(ODE) : 0;
@@ -33,15 +45,6 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits) {
             /* Ignore zero terms immediately: */
             if (acb_is_zero(oldCoeff))
                 continue;
-            if (realError < arb_rel_error_bits(acb_realref(oldCoeff)))
-                realError = arb_rel_error_bits(acb_realref(oldCoeff));
-            if (realError < convergence_tolerance*bits)
-                realError = convergence_tolerance*bits;
-
-            if (imagError < arb_rel_error_bits(acb_imagref(oldCoeff)))
-                imagError = arb_rel_error_bits(acb_imagref(oldCoeff));
-            if (imagError < convergence_tolerance*bits)
-                imagError = convergence_tolerance*bits;
 
             /* Check for proper convergence of the summands */
             acb_mul(temp,oldCoeff,power,bits);
@@ -124,6 +127,7 @@ void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len
             flint_printf(" to ");
             acb_printd(path+time+1,10);
             flint_printf(" where t = %w.\n",time);
+            time++;
             break;
         }
         acb_poly_taylor_shift(ODE->solution,ODE->solution,a,bits);
@@ -185,18 +189,33 @@ int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits) {
     return incorrect;
 }
 
-void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_ptr path, slong len, slong bits) {
-    acb_mat_init(monodromy,order(ODE),order(ODE));
-    if (monodromy == NULL) /* Further Error checking elsewhere */
+void find_monodromy_matrix (acb_ode_t ODE, acb_mat_struct monodromy, slong bits)
+{
+    if (ODE == NULL)
+    {
+        flint_printf("The ODE is the NULL-pointer. Please confirm input.\n");
         return;
+    }
+    slong steps = 64;
+    acb_ptr path = _acb_vec_init(steps+1);
+
+    for (slong i = 0; i < steps; i++)
+    {
+        acb_set_si(path+i,i);
+        acb_div_ui(path+i,path+i,steps/2,bits);
+        acb_exp_pi_i(path+i,path+i,bits);
+    }
+    acb_set(path+steps,path);
+    _acb_vec_scalar_div_ui(path,path,steps+1,2,steps/2*bits);
+    
     for (slong i = 0; i < order(ODE); i++)
     {
         acb_poly_zero(ODE->solution);
         acb_poly_set_coeff_si(ODE->solution,i,1);
-        analytic_continuation(acb_mat_entry(monodromy,i,0),ODE,path,len,bits,TRUE);
+        analytic_continuation(acb_mat_entry(&monodromy,i,0),ODE,path,steps+1,bits,TRUE);
     }
     acb_t determinant; acb_init(determinant);
-    acb_mat_det(determinant,monodromy,bits);
+    acb_mat_det(determinant,&monodromy,bits);
     if (order(ODE) > 1)
     {
         flint_printf("The monodromy matrix has the determinant ");
@@ -204,6 +223,7 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_ptr path, sl
         flint_printf("\n");
     }
     acb_clear(determinant);
+    _acb_vec_clear(path,steps+1);
     return;
 }
 
@@ -230,7 +250,6 @@ void acb_ode_dump(acb_ode_t ODE)
 
 void entry_point (const ulong maxOrder, slong bits, double z_val, const char *file) {
     bits = bits*3.32193 + 5;
-    slong steps = 128;
 
     ulong numOfPols;
     acb_poly_t *polys = acb_ode_fread(&numOfPols,file,maxOrder,10*bits);
@@ -242,30 +261,17 @@ void entry_point (const ulong maxOrder, slong bits, double z_val, const char *fi
     acb_set_d(z,z_val);
     acb_mat_t monodromy;
 
-    acb_ptr path = _acb_vec_init(steps+1);
-    for (slong i = 0; i < steps; i++) {
-        acb_set_si(path+i,i);
-        acb_div_ui(path+i,path+i,steps/2,bits);
-        acb_exp_pi_i(path+i,path+i,bits);
-    }
-    acb_set(path+steps,path);
-    _acb_vec_scalar_div_ui(path,path,steps+1,8,steps/2*bits);
-    flint_printf("Path has been initialised!\n");
-
     acb_ode_t ODE = acb_ode_init(polys,NULL,numOfPols);
+    acb_mat_init(monodromy,order(ODE),order(ODE));
+    flint_printf("The equation was divided by z^%w to obtain a simpler yet equivalent expression.\n",acb_ode_reduce(ODE));
     if (ODE != NULL)
     {
         //~ acb_poly_set_coeff_si(ODE->solution,0,1);
         //~ find_power_series(ODE,z,bits);
         //~ checkODE(polys,ODE,z,bits);
-        find_monodromy_matrix(monodromy,ODE,path,steps+1,bits);
-        if (monodromy == NULL)
-            flint_printf("Could not allocate memory. Please try again.\n");
-        else
-        {
-            acb_mat_printd(monodromy,bits/33.2193);
-            acb_mat_clear(monodromy);
-        }
+        find_monodromy_matrix(ODE,monodromy[0],bits);
+        acb_mat_printd(monodromy,bits/33.2193);
+        acb_mat_clear(monodromy);
     }
 
     for (ulong i = 0; i <= numOfPols; i++)
@@ -274,7 +280,6 @@ void entry_point (const ulong maxOrder, slong bits, double z_val, const char *fi
     flint_free(polys);
     acb_ode_clear(ODE);
     acb_clear(res); acb_clear(z);
-    _acb_vec_clear(path,steps+1);
     flint_cleanup();
     return;
 }

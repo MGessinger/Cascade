@@ -24,7 +24,6 @@ short precondition (acb_poly_t *polys, acb_ode_t ODE)
         flint_printf("The order of the differential equation has to be positive.\n");
         return INVALID_DATA;
     }
-    flint_printf("The polynomials have degree at most %wd .\n",polyMaxDeg);
     return ORDINARY;
 }
 
@@ -208,34 +207,6 @@ void parsePoly(acb_poly_t polyOut, const char *polyString, const slong strLength
     flint_printf("Done!\n");
     acb_clear(coeff);
     return;
-}
-
-acb_ode_t acb_ode_simplify(acb_ode_t ODE)
-{
-    if (ODE == NULL)
-        return NULL;
-    slong shift = 0;
-    acb_ode_t ODEfixed = NULL;
-    for (; shift <= order(ODE); shift++)
-    {
-        /* shift finds the number of leading Zero polynomials */
-        if (!_acb_vec_is_zero(diff_eq_poly(ODE,shift),degree(ODE)+1))
-        {
-            break;
-        }
-    }
-    if (shift != 0)
-    {
-        ODEfixed = acb_ode_set(NULL,ODE);
-        order(ODEfixed) -= shift;
-        for (slong i = 0; i <= order(ODEfixed); i++)
-            _acb_vec_set(diff_eq_poly(ODEfixed,i),diff_eq_poly(ODE,i+shift),degree(ODE)+1);
-        for (slong j = 1; j <= shift; j++)
-        {
-            _acb_vec_clear(diff_eq_poly(ODEfixed,j+order(ODEfixed)),degree(ODE)+1);
-        }
-    }
-    return ODEfixed;
 }
 
 slong acb_ode_reduce (acb_ode_t ODE)

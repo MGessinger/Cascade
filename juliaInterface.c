@@ -46,7 +46,7 @@ void acb_set_initial(acb_ode_t ODE, acb_poly_struct init)
     acb_poly_set(ODE->solution,&init);
     return;
 }
-    
+
 acb_poly_struct find_power_series_julia(acb_ode_t ODE, acb_struct in, slong bits)
 {
     if (acb_poly_is_zero(ODE->solution))
@@ -57,29 +57,4 @@ acb_poly_struct find_power_series_julia(acb_ode_t ODE, acb_struct in, slong bits
     find_power_series(ODE, &in, bits);
     flint_cleanup();
     return ODE->solution[0];
-}
-
-acb_mat_struct find_monodromy_julia (acb_ode_t ODE, slong bits)
-{
-    acb_mat_t monodromy;
-    if (ODE == NULL)
-    {
-        printf("The ODE is the NULL-pointer. Please confirm input.\n");
-        return monodromy[0];
-    }
-    slong steps = 16;
-    acb_ptr path = _acb_vec_init(steps+1);
-    
-    for (slong i = 0; i < steps; i++)
-    {
-        acb_set_si(path+i,i);
-        acb_div_ui(path+i,path+i,steps/2,bits);
-        acb_exp_pi_i(path+i,path+i,bits);
-    }
-    acb_set(path+steps,path);
-    _acb_vec_scalar_div_ui(path,path,steps+1,128,steps/2*bits);
-    find_monodromy_matrix(monodromy,ODE,path,steps+1,bits);
-    _acb_vec_clear(path,steps+1);
-    flint_cleanup();
-    return monodromy[0];
 }

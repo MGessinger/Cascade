@@ -12,6 +12,4 @@ void acb_set_initial(acb_ode_t ODE, acb_poly_struct init);
 
 acb_poly_struct find_power_series_julia(acb_ode_t ODE, acb_struct in, slong bits);
 
-acb_mat_struct find_monodromy_julia (acb_ode_t ODE, slong bits);
-
 #endif
