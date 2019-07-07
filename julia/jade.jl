@@ -18,7 +18,7 @@ function __init__()
     print("  |  _  __  ,__ \n")
     print("  | |_| | \\ |__ \n")
     print("\\_/ | | |_/ |__ \n")
-	print("\nThis is JADE v.0.3, an interface to CASCADE,\n\n")
+    print("\nThis is JADE v.0.3, an interface to CASCADE,\n\n")
     print("The C-Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations!\n")
 end
 
@@ -28,14 +28,14 @@ function acb_ode(polys::Array{T,1} where T <: Pol)
     end
     deg = 0
     order = length(polys)-1
-	while iszero(polys[order+1])
+    while iszero(polys[order+1])
         order -= 1
     end
     for p in polys
         if deg < degree(p)
             deg = degree(p)
         end
-	end
+    end
     if order < 0 || deg < 0
         return
     end
@@ -85,7 +85,7 @@ function setPolynomial(ode::acb_ode, index::Integer, polynomial::N where N <: Po
         if deg < degree(p)
             deg = degree(p)
         end
-	end
+    end
     ode.degree = deg 
     return
 end
@@ -95,13 +95,11 @@ function translateC(ode::acb_ode)
         deleteC(ode)
     end
     print("[INFO] Translating ODE to C-style struct.\n")
-    print("[INFO] This will need to be performed again after any change of this ode.\n")
-	A = ccall( (:acb_ode_setup_blank,"libcascade"), Ptr{nothing}, (Cint,Cint), ode.degree, ode.order)
+    A = ccall( (:acb_ode_setup_blank,"libcascade"), Ptr{nothing}, (Cint,Cint), ode.degree, ode.order)
     for i = 1:ode.order+1
         ccall( (:acb_ode_set_poly,"libcascade"), Cint, (Ptr{nothing},acb_poly,Cint), A, ode.polys[i], i-1)
     end
     ode.odeC = A
-    print("[INFO] To free the allocated memory, run deleteC\n")
     return A
 end
 
@@ -132,10 +130,11 @@ function monodromy(ode::acb_ode)
         translateC(ode);
     end
     Ring = ode.polys[1].parent.base_ring
-	S = MatrixSpace(Ring,ode.order,ode.order)
+    S = MatrixSpace(Ring,ode.order,ode.order)
     mono = S(0)
     ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ptr{nothing},acb_mat,Cint),ode.odeC,mono,Ring.prec)
     mono.base_ring = Ring
+    deleteC(ode)
     return mono
 end
 

@@ -1,10 +1,5 @@
 #include "juliaInterface.h"
 
-/*ulong set_tolerance(ulong new_tol)
-{
-    return convergence_tolerance = new_tol;
-}*/
-
 acb_ode_t acb_ode_setup_blank(slong degree, slong order)
 {
     if (degree < 0 || order <= 0)

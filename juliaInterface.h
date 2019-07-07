@@ -4,9 +4,7 @@
 #include "acb_ode.h"
 #include "cascade.h"
 
-ulong set_tolerance(ulong new_tol);
-
-acb_ode_t acb_ode_setup_empty(slong degree, slong order);
+acb_ode_t acb_ode_setup_blank(slong degree, slong order);
 
 void acb_set_initial(acb_ode_t ODE, acb_poly_struct init);
 

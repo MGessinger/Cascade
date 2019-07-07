@@ -27,6 +27,36 @@ short precondition (acb_poly_t *polys, acb_ode_t ODE)
     return ORDINARY;
 }
 
+void radiusOfConvergence(acb_ode_t ODE, arf_t radOfConv, slong bits)
+{
+    if (ODE == NULL)
+    {
+        arf_nan(radOfConv);
+        return;
+    }
+    acb_t radius;
+    acb_init(radius);
+    slong rootOrder = 0;
+    while (acb_is_zero(diff_eq_coeff(ODE,order(ODE),rootOrder)))
+    {
+        rootOrder++;
+        if (rootOrder == degree(ODE))
+            break;
+    }
+    if (rootOrder == degree(ODE))
+    {
+        arf_one(radOfConv);
+        return;
+    }
+    acb_div(radius,diff_eq_coeff(ODE,order(ODE),rootOrder),diff_eq_coeff(ODE,order(ODE),rootOrder+1),bits);
+    flint_printf("degree: %w, rootOrder: %w\n",degree(ODE),rootOrder);
+    acb_mul_si(radius,radius,degree(ODE)-rootOrder,bits);
+    acb_get_abs_lbound_arf(radOfConv,radius,bits);
+    arf_printd(radOfConv,bits);
+    acb_clear(radius);
+    return;
+}
+
 acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order)
 {
     /* Prepare the Differential equation for later use */

@@ -198,16 +198,16 @@ void find_monodromy_matrix (acb_ode_t ODE, acb_mat_struct monodromy, slong bits)
     }
     slong steps = 64;
     acb_ptr path = _acb_vec_init(steps+1);
+    acb_t radOfConv; acb_init(radOfConv);
 
-    for (slong i = 0; i < steps; i++)
-    {
-        acb_set_si(path+i,i);
-        acb_div_ui(path+i,path+i,steps/2,bits);
-        acb_exp_pi_i(path+i,path+i,bits);
-    }
-    acb_set(path+steps,path);
-    _acb_vec_scalar_div_ui(path,path,steps+1,2,steps/2*bits);
+    /* Choose a path for the analytic continuation */
+    radiusOfConvergence(ODE,arb_midref(acb_realref(radOfConv)),bits);
+    acb_div_si(radOfConv,radOfConv,convergence_tolerance,bits);
+    _acb_vec_unit_roots(path, steps, steps, bits);
+    acb_one(path+steps);
+    _acb_vec_scalar_mul(path,path,steps+1,radOfConv,bits);
     
+    /* Compute the function along the chosen path */
     for (slong i = 0; i < order(ODE); i++)
     {
         acb_poly_zero(ODE->solution);
@@ -223,6 +223,7 @@ void find_monodromy_matrix (acb_ode_t ODE, acb_mat_struct monodromy, slong bits)
         flint_printf("\n");
     }
     acb_clear(determinant);
+    acb_clear(radOfConv);
     _acb_vec_clear(path,steps+1);
     return;
 }
@@ -248,7 +249,8 @@ void acb_ode_dump(acb_ode_t ODE)
     return;
 }
 
-void entry_point (const ulong maxOrder, slong bits, double z_val, const char *file) {
+void entry_point (const ulong maxOrder, slong bits, double z_val, const char *file)
+{
     bits = bits*3.32193 + 5;
 
     ulong numOfPols;
@@ -284,7 +286,8 @@ void entry_point (const ulong maxOrder, slong bits, double z_val, const char *fi
     return;
 }
 
-int main (int argc, char **argv) {
+int main (int argc, char **argv)
+{
     entry_point((argc >= 3) ? atol(argv[2]) : 1,
                   (argc >= 4) ? atol(argv[3]) : 50,
                   (argc >= 5) ? atof(argv[4]) : 1,

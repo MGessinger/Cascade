@@ -25,6 +25,8 @@ typedef acb_ode_struct* acb_ode_t;
 
 short precondition (acb_poly_t *polys, acb_ode_t ODE);
 
+void radiusOfConvergence(acb_ode_t ODE, arf_t radOfConv, slong bits);
+
 acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order);
 
 void acb_ode_clear (acb_ode_t ODE);
@@ -36,8 +38,6 @@ void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits);
 acb_poly_t* acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits);
 
 void parsePoly(acb_poly_t polyOut, const char *polyString, slong strLength, slong bits);
-
-acb_ode_t acb_ode_simplify(acb_ode_t ODE);
 
 slong acb_ode_reduce (acb_ode_t ODE);
 
