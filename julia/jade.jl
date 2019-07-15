@@ -2,14 +2,12 @@ module Jade
 
 using Nemo
 
-global const Pol = PolyElem{acb}
-
 export acb_ode,monodromy,powerSeries,translateC,deleteC,setPolynomial,setInitialValues
 
-mutable struct acb_ode 
-    degree::Integer
-    order::Integer
-    polys::Array{N,1} where N <: Pol
+mutable struct acb_ode{T<:Integer}
+    degree::T
+    order::T
+    polys::Array{acb_poly,1}
     odeC::Ptr{nothing}
 end
 
@@ -22,7 +20,7 @@ function __init__()
     print("The C-Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations!\n")
 end
 
-function acb_ode(polys::Array{T,1} where T <: Pol)
+function acb_ode(polys::Array{acb_poly,1})
     if (length(polys) == 0)
         return
     end
@@ -39,14 +37,13 @@ function acb_ode(polys::Array{T,1} where T <: Pol)
     if order < 0 || deg < 0
         return
     end
-    A = acb_ode(deg,order,Array{typeof(polys[1]),1}(undef,order+1),0)
-    for i = 1:A.order+1
-        A.polys[i] = polys[i]
-    end
+    A = acb_ode(deg,order,Array{acb_poly,1}(undef,order+1),Ptr{nothing}(0))
+    A.polys = polys
+    finalizer(deleteC, A)
     return A
 end
 
-function setPolynomial(ode::acb_ode, index::Integer, polynomial::N where N <: Pol)
+function setPolynomial(ode::acb_ode, index::Integer, polynomial::acb_poly)
     if ode.odeC != Ptr{nothing}(0)
         deleteC(ode)
     end
@@ -54,12 +51,12 @@ function setPolynomial(ode::acb_ode, index::Integer, polynomial::N where N <: Po
         if iszero(polynomial)
             return
         end
-        arr = typeof(ode.polys)(undef,index)
+        arr = Array{acb_poly,1}(undef,index)
         for i = 1:index-1
             if i <= ode.order+1
                 arr[i] = ode.polys[i]
             else
-                arr[i] = ode.polys[1].parent(0)
+                arr[i] = ode.polys[i].parent(0)
             end
         end
         ode.polys = arr
@@ -94,7 +91,6 @@ function translateC(ode::acb_ode)
     if ode.odeC != Ptr{nothing}(0)
         deleteC(ode)
     end
-    print("[INFO] Translating ODE to C-style struct.\n")
     A = ccall( (:acb_ode_setup_blank,"libcascade"), Ptr{nothing}, (Cint,Cint), ode.degree, ode.order)
     for i = 1:ode.order+1
         ccall( (:acb_ode_set_poly,"libcascade"), Cint, (Ptr{nothing},acb_poly,Cint), A, ode.polys[i], i-1)
@@ -109,7 +105,7 @@ function deleteC(ode::acb_ode)
     return
 end
 
-function setInitialValues(ode::acb_ode,poly::N where N <: Pol)
+function setInitialValues(ode::acb_ode,poly::acb_poly)
     if ode.odeC == Ptr{nothing}(0)
         translateC(ode);
     end
@@ -125,14 +121,14 @@ function powerSeries(ode::acb_ode,target::acb)
     return polyRing(p)
 end
 
-function monodromy(ode::acb_ode)
+function monodromy(ode::acb_ode,z0=0)
     if ode.odeC == Ptr{nothing}(0)
         translateC(ode);
     end
     Ring = ode.polys[1].parent.base_ring
     S = MatrixSpace(Ring,ode.order,ode.order)
-    mono = S(0)
-    ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ptr{nothing},acb_mat,Cint),ode.odeC,mono,Ring.prec)
+    mono = S(1)
+    ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(acb_mat,Ptr{nothing},acb,Cint),mono,ode.odeC,Ring(z0),Ring.prec)
     mono.base_ring = Ring
     deleteC(ode)
     return mono
