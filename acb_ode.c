@@ -34,10 +34,19 @@ void radiusOfConvergence(acb_ode_t ODE, arf_t radOfConv, slong bits)
         arf_nan(radOfConv);
         return;
     }
+    if (!acb_is_zero(diff_eq_coeff(ODE,order(ODE),0)))
+    {
+        flint_printf("The point z0 = 0 is not singular. Do you really want to compute the monodromy? (y/n)\n");
+        if (getchar() == 'n')
+        {
+            arf_zero(radOfConv);
+            return;
+        }
+    }
     acb_t radius;
     acb_init(radius);
     slong rootOrder = 0;
-    while (acb_is_zero(diff_eq_coeff(ODE,order(ODE),rootOrder)))
+    while (acb_contains_zero(diff_eq_coeff(ODE,order(ODE),rootOrder)))
     {
         rootOrder++;
         if (rootOrder == degree(ODE))
@@ -49,10 +58,8 @@ void radiusOfConvergence(acb_ode_t ODE, arf_t radOfConv, slong bits)
         return;
     }
     acb_div(radius,diff_eq_coeff(ODE,order(ODE),rootOrder),diff_eq_coeff(ODE,order(ODE),rootOrder+1),bits);
-    flint_printf("degree: %w, rootOrder: %w\n",degree(ODE),rootOrder);
     acb_mul_si(radius,radius,degree(ODE)-rootOrder,bits);
     acb_get_abs_lbound_arf(radOfConv,radius,bits);
-    arf_printd(radOfConv,bits);
     acb_clear(radius);
     return;
 }
@@ -132,6 +139,8 @@ acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in)
 
 void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits)
 {
+    if (acb_is_zero(a))
+        return;
     if (degree(ODE) < 1)
         return;
     for (slong j = 0; j <= order(ODE); j++)

@@ -2,7 +2,8 @@
 
 slong convergence_tolerance = 2;
 
-ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits) {
+ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits)
+{
     /* Iteratively compute the summands of the power series solution near z=in (where z0 = 0).
      * Only converges when z0=0 is an ordinary point and and B(0,|in|) contains no singularities.
      * This is not tested here! */
@@ -19,7 +20,7 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits) {
 
     slong num_of_nonzero;
     slong realError = 0, imagError = 0;
-    slong newIndex = 0;
+    slong minIndex, maxPoly, newIndex = 0;
     for (int oldIndex = 0; oldIndex < order(ODE); oldIndex++)
     {
         acb_poly_get_coeff_acb(oldCoeff,ODE->solution,oldIndex);
@@ -36,7 +37,7 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits) {
     do {
         num_of_nonzero = 0;
         acb_zero(newCoeff);
-        slong minIndex = (newIndex > degree(ODE)) ? newIndex - degree(ODE) : 0;
+        minIndex = (newIndex > degree(ODE)) ? newIndex - degree(ODE) : 0;
 
         for (slong oldIndex = newIndex+order(ODE)-1; oldIndex >= minIndex; oldIndex--)
         {
@@ -54,16 +55,16 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits) {
             acb_zero(temp);
 
             /* Loop through the polynomials */
-            for (slong polyIndex = order(ODE); polyIndex >= 0; polyIndex--)
+            maxPoly = order(ODE);
+            /* No more than degree(ODE) terms can contribute: */
+            if (maxPoly > degree(ODE) + oldIndex - newIndex)
+                maxPoly = degree(ODE) + oldIndex - newIndex;
+            if (maxPoly > oldIndex)
+                maxPoly = oldIndex;
+            for (slong polyIndex = maxPoly; polyIndex >= 0; polyIndex--)
             {
-                /* No more than degree(ODE) terms can contribute: */
-                if (polyIndex > degree(ODE) + oldIndex - newIndex)
-                    polyIndex = degree(ODE) + oldIndex - newIndex;
-                if (polyIndex > oldIndex)
-                    polyIndex = oldIndex;
                 if (polyIndex + newIndex - oldIndex >= 0)
                     acb_add(temp,temp,diff_eq_coeff(ODE,polyIndex,polyIndex+newIndex-oldIndex),bits);
-
 
                 if (polyIndex != 0)
                     acb_mul_si(temp,temp,oldIndex - polyIndex + 1,bits);
@@ -110,11 +111,11 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits) {
 
 void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len, slong bits, int output_solution)
 {
-    acb_t a; acb_init(a);
-    slong time = 0;
-
     /* Evaluate a solution along the given piecewise linear path */
+    acb_t a; acb_init(a);
     acb_set(a,path);
+
+    slong time = 0;
     for (; time+1 < len; time++)
     {
         acb_ode_shift(ODE,a,bits);
@@ -147,7 +148,8 @@ void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len
     return;
 }
 
-int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits) {
+int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits)
+{
     acb_poly_t result, polyder, summand;
     acb_poly_init(polyder);
     acb_poly_init(summand);
@@ -189,7 +191,7 @@ int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits) {
     return incorrect;
 }
 
-void find_monodromy_matrix (acb_ode_t ODE, acb_mat_struct monodromy, slong bits)
+void find_monodromy_matrix (acb_mat_struct monodromy, acb_ode_t ODE, acb_struct z0, slong bits)
 {
     if (ODE == NULL)
     {
@@ -199,14 +201,20 @@ void find_monodromy_matrix (acb_ode_t ODE, acb_mat_struct monodromy, slong bits)
     slong steps = 64;
     acb_ptr path = _acb_vec_init(steps+1);
     acb_t radOfConv; acb_init(radOfConv);
+    /* Move to the given singularity */
+    if (acb_is_finite(&z0))
+        acb_ode_shift(ODE,&z0,bits);
 
     /* Choose a path for the analytic continuation */
     radiusOfConvergence(ODE,arb_midref(acb_realref(radOfConv)),bits);
+    if (acb_is_zero(radOfConv))
+        return;
     acb_div_si(radOfConv,radOfConv,convergence_tolerance,bits);
+
     _acb_vec_unit_roots(path, steps, steps, bits);
     acb_one(path+steps);
     _acb_vec_scalar_mul(path,path,steps+1,radOfConv,bits);
-    
+
     /* Compute the function along the chosen path */
     for (slong i = 0; i < order(ODE); i++)
     {
@@ -214,15 +222,6 @@ void find_monodromy_matrix (acb_ode_t ODE, acb_mat_struct monodromy, slong bits)
         acb_poly_set_coeff_si(ODE->solution,i,1);
         analytic_continuation(acb_mat_entry(&monodromy,i,0),ODE,path,steps+1,bits,TRUE);
     }
-    acb_t determinant; acb_init(determinant);
-    acb_mat_det(determinant,&monodromy,bits);
-    if (order(ODE) > 1)
-    {
-        flint_printf("The monodromy matrix has the determinant ");
-        acb_printn(determinant,bits,ARB_STR_CONDENSE * 50);
-        flint_printf("\n");
-    }
-    acb_clear(determinant);
     acb_clear(radOfConv);
     _acb_vec_clear(path,steps+1);
     return;
@@ -247,51 +246,4 @@ void acb_ode_dump(acb_ode_t ODE)
     acb_poly_fprintd(out,ODE->solution,10);
     fclose(out);
     return;
-}
-
-void entry_point (const ulong maxOrder, slong bits, double z_val, const char *file)
-{
-    bits = bits*3.32193 + 5;
-
-    ulong numOfPols;
-    acb_poly_t *polys = acb_ode_fread(&numOfPols,file,maxOrder,10*bits);
-    if (polys == NULL)
-        return;
-
-    acb_t res, z;
-    acb_init(res); acb_init(z);
-    acb_set_d(z,z_val);
-    acb_mat_t monodromy;
-
-    acb_ode_t ODE = acb_ode_init(polys,NULL,numOfPols);
-    acb_mat_init(monodromy,order(ODE),order(ODE));
-    flint_printf("The equation was divided by z^%w to obtain a simpler yet equivalent expression.\n",acb_ode_reduce(ODE));
-    if (ODE != NULL)
-    {
-        //~ acb_poly_set_coeff_si(ODE->solution,0,1);
-        //~ find_power_series(ODE,z,bits);
-        //~ checkODE(polys,ODE,z,bits);
-        find_monodromy_matrix(ODE,monodromy[0],bits);
-        acb_mat_printd(monodromy,bits/33.2193);
-        acb_mat_clear(monodromy);
-    }
-
-    for (ulong i = 0; i <= numOfPols; i++)
-        if (polys[i] != NULL)
-            acb_poly_clear(polys[i]);
-    flint_free(polys);
-    acb_ode_clear(ODE);
-    acb_clear(res); acb_clear(z);
-    flint_cleanup();
-    return;
-}
-
-int main (int argc, char **argv)
-{
-    entry_point((argc >= 3) ? atol(argv[2]) : 1,
-                  (argc >= 4) ? atol(argv[3]) : 50,
-                  (argc >= 5) ? atof(argv[4]) : 1,
-                  argv[1]);
-    flint_cleanup();
-    return 0;
 }
