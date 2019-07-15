@@ -1,5 +1,6 @@
-arb-2.16.0/
 data/
 libarb-2.dll
-cascade.exe
-make.bat
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
