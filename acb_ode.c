@@ -273,5 +273,27 @@ slong acb_ode_reduce (acb_ode_t ODE)
         for (slong i = 0; i<= order(ODE); i++)
             _acb_poly_shift_right(diff_eq_poly(ODE,i),diff_eq_poly(ODE,i),degree(ODE)+1,reduced);
     }
+    degree(ODE) -= reduced;
     return reduced;
+}
+
+void acb_ode_dump(acb_ode_t ODE)
+{
+    FILE *out = fopen("odedump.txt","w");
+    if (out == NULL)
+        return;
+    flint_fprintf(out,"Order: %w\nDegree: %w\n",order(ODE),degree(ODE));
+    for (slong i = 0; i <= order(ODE); i++)
+    {
+        for (slong j = 0; j <= degree(ODE); j++)
+        {
+            acb_fprintd(out,diff_eq_coeff(ODE,i,j),10);
+            flint_fprintf(out,"\t");
+        }
+        flint_fprintf(out,"\n");
+    }
+    flint_fprintf(out,"\n");
+    acb_poly_fprintd(out,ODE->solution,10);
+    fclose(out);
+    return;
 }

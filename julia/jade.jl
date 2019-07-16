@@ -5,7 +5,6 @@ using Nemo
 export acb_ode,monodromy,powerSeries,translateC,deleteC,setPolynomial,setInitialValues
 
 mutable struct acb_ode{T<:Integer}
-    degree::T
     order::T
     polys::Array{acb_poly,1}
     odeC::Ptr{nothing}
@@ -16,7 +15,7 @@ function __init__()
     print("  |  _  __  ,__ \n")
     print("  | |_| | \\ |__ \n")
     print("\\_/ | | |_/ |__ \n")
-    print("\nThis is JADE v.0.4, an interface to CASCADE,\n\n")
+    print("\nThis is JADE v.0.5, an interface to CASCADE,\n\n")
     print("The C-Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations!\n")
 end
 
@@ -29,15 +28,10 @@ function acb_ode(polys::Array{acb_poly,1})
     while iszero(polys[order+1])
         order -= 1
     end
-    for p in polys
-        if deg < degree(p)
-            deg = degree(p)
-        end
-    end
-    if order < 0 || deg < 0
+    if order < 0
         return
     end
-    A = acb_ode(deg,order,Array{acb_poly,1}(undef,order+1),Ptr{nothing}(0))
+    A = acb_ode(order,Array{acb_poly,1}(undef,order+1),Ptr{nothing}(0))
     A.polys = polys
     finalizer(deleteC, A)
     return A
@@ -76,14 +70,6 @@ function setPolynomial(ode::acb_ode, index::Integer, polynomial::acb_poly)
         end
         ode.polys = arr
     end
-    # The value for ode.degree might have changed
-    deg = 0
-    for p in ode.polys
-        if deg < degree(p)
-            deg = degree(p)
-        end
-    end
-    ode.degree = deg 
     return
 end
 
@@ -91,7 +77,13 @@ function translateC(ode::acb_ode)
     if ode.odeC != Ptr{nothing}(0)
         deleteC(ode)
     end
-    A = ccall( (:acb_ode_setup_blank,"libcascade"), Ptr{nothing}, (Cint,Cint), ode.degree, ode.order)
+    deg = 0
+    for p in ode.polys
+        if deg < degree(p)
+            deg = degree(p)
+        end
+    end
+    A = ccall( (:acb_ode_setup_blank,"libcascade"), Ptr{nothing}, (Cint,Cint), deg, ode.order)
     for i = 1:ode.order+1
         ccall( (:acb_ode_set_poly,"libcascade"), Cint, (Ptr{nothing},acb_poly,Cint), A, ode.polys[i], i-1)
     end

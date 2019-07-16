@@ -1,5 +1,5 @@
-#ifndef MONODROMY_H
-#define MONODROMY_H
+#ifndef CASCADE_H_
+#define CASCADE_H_
 
 #include <acb_poly.h>
 #include <acb_mat.h>
@@ -15,8 +15,4 @@ void find_monodromy_matrix (acb_mat_struct monodromy, acb_ode_t ODE, acb_struct 
 
 int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits);
 
-void entry_point (const ulong n, slong prec, double z, const char *file);
-
-void acb_ode_dump(acb_ode_t ODE);
-
-#endif
+#endif /* CASCADE_H_ */

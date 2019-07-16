@@ -173,13 +173,7 @@ int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits)
     if (mag_cmp_2exp_si(absValue,-bits*0.90) >= 0)
     {
         incorrect = 1;
-        flint_printf("The differential equation has not been solved correctly. These are the coefficients:\n");
-        acb_poly_printd(ODE->solution,10);
-        flint_printf("\n, which evaluates to ");
-        mag_print(absValue);
-        flint_printf(" at ");
-        acb_printd(z,10);
-        flint_printf(".\n");
+        acb_ode_dump(ODE);
     }
 
     acb_poly_clear(summand);
@@ -224,26 +218,5 @@ void find_monodromy_matrix (acb_mat_struct monodromy, acb_ode_t ODE, acb_struct 
     }
     acb_clear(radOfConv);
     _acb_vec_clear(path,steps+1);
-    return;
-}
-
-void acb_ode_dump(acb_ode_t ODE)
-{
-    FILE *out = fopen("data/odedump.txt","w");
-    if (out == NULL)
-        return;
-    flint_fprintf(out,"Order: %w\nDegree: %w\n",order(ODE),degree(ODE));
-    for (slong i = 0; i <= order(ODE); i++)
-    {
-        for (slong j = 0; j <= degree(ODE); j++)
-        {
-            acb_fprintd(out,diff_eq_coeff(ODE,i,j),10);
-            flint_fprintf(out,"\t");
-        }
-        flint_fprintf(out,"\n");
-    }
-    flint_fprintf(out,"\n");
-    acb_poly_fprintd(out,ODE->solution,10);
-    fclose(out);
     return;
 }
