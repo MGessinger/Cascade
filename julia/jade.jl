@@ -92,6 +92,9 @@ function translateC(ode::acb_ode)
 end
 
 function deleteC(ode::acb_ode)
+    if ode.odeC == Ptr{nothing}(0)
+        return
+    end
     ccall((:acb_ode_clear,"libcascade"), Cvoid, (Ptr{nothing},), ode.odeC)
     ode.odeC = Ptr{nothing}(0)
     return

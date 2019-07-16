@@ -64,10 +64,10 @@ Input and Output
 
 .. function:: acb_poly_t* acb_ode_fread (ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits)
 
-    Reads a differential equation from the provided file. The formatting for the *n-th* summand is *yn\*(a0,a1,a2,...)* where *a0* are complex numbers in the form *an = x +yj* (notice the space before the *+*!)
+    Reads a differential equation from the provided file. The formatting for the *n-th* summand is *yn\*(a0,a1,a2,...)* where *a0* are complex numbers in the form *an = x +yj* (notice the space before the *+*!). Example:
 
-.. example::
-    y2\*(1,2,1) + y0\*(1 +3j)
+.. math::
+    y2*(1,2,1) + y0*(1 +3j)
 
 .. function:: void acb_ode_dump (acb_ode_t ODE)
 

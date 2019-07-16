@@ -1,4 +1,4 @@
-.. _cascade:
+.. _Cascade:
 
 **cascade.h** - Solving complex differential equations
 ======================================================
