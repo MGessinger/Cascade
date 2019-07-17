@@ -192,7 +192,7 @@ void find_monodromy_matrix (acb_mat_struct monodromy, acb_ode_t ODE, acb_struct 
         flint_printf("The ODE is the NULL-pointer. Please confirm input.\n");
         return;
     }
-    slong steps = 64;
+    slong steps = 32;
     acb_ptr path = _acb_vec_init(steps+1);
     acb_t radOfConv; acb_init(radOfConv);
     /* Move to the given singularity */

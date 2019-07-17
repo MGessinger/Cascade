@@ -13,7 +13,7 @@ Types, macros and constants
 
     Contains a pointer to an array of the coefficients, the maximum degree of all the polynomials, the order of the ODE and a pointer to an :type:`acb_poly` containing a power series solution.
 
-    An *acb_ode_t* is defined as a pointer of type *acb_ode_struct*, permitting an *acb_ode_t* to be passed by reference.
+    An :type:`acb_ode_t` is defined as a pointer of type :type:`acb_ode_struct`, permitting an :type:`acb_ode_t` to be passed by reference.
 
 .. macro:: diff_eq_poly(ODE, i)
 
@@ -21,7 +21,7 @@ Types, macros and constants
 
 .. macro:: diff_eq_coeff(ODE, i ,j)
 
-    Macro returning a pointer to the *j-th* coefficient of the *i-th* polynomial. This macro is identical to diff_eq_poly(ODE,i)->(j).
+    Macro returning a pointer to the *j-th* coefficient of the *i-th* polynomial. This macro is identical to *diff_eq_poly(ODE,i)->(j)*.
 
 .. macro:: order(ODE)
 
