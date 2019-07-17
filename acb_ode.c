@@ -154,7 +154,7 @@ void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits)
     return;
 }
 
-acb_poly_t* acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits)
+acb_ode_t acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits)
 {
     if (maxOrder == 0)
         maxOrder = UWORD_MAX;
@@ -194,7 +194,7 @@ acb_poly_t* acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOr
             parsePoly(polys[derivative],poly,length,bits);
     } while (fscanf(input,"%*[^a-z]%*c%lu*(",&derivative) != EOF);
     fclose(input);
-    return polys;
+    return acb_ode_init(polys,NULL,*numberOfPols);
 }
 
 void parsePoly(acb_poly_t polyOut, const char *polyString, const slong strLength, slong bits)
