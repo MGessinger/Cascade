@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.0)
 project(Cascade VERSION 0.5.3)
 
 set(CascadeSrc
-    cascade.c
-    acb_ode.c
-    juliaInterface.c
+    src/cascade.c
+    src/acb_ode.c
+    src/juliaInterface.c
 )
 
 add_library(cascade SHARED ${CascadeSrc})
