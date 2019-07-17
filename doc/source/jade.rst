@@ -1,7 +1,7 @@
 .. _Nemo: http://nemocas.org
 .. _Jade:
 
-**JADE** - the Julia interface to Arbitrary precision Differential Equations
+**Jade** - the Julia interface to Arbitrary precision Differential Equations
 ====================================================================================
 
 Jade provides an interactive interface to Cascade, which can be used from julia's REPL. It uses Nemo_ to store variables of type :type:`acb` in julia, which will then be translated to a C-style struct whenever needed. All memory management will be performed automatically, but you can manually create or delete the C-struct if you need to.
@@ -11,9 +11,9 @@ Types
 
 .. type:: acb_ode
 
-    Contains an array of type acb_poly, the order of the differential equation and a pointer of type nothing. The latter is used to store a pointer to an `acb_ode_t` created by Cascade.
+    Contains an array of type acb_poly, the order of the differential equation and a pointer of type *nothing*. The latter is used to store a pointer to an `acb_ode_t` created by Cascade.
 
-.. danger::
+.. warning::
     The pointer value should never be accessed directly by the user! Pointers are created and free'd by Cascade. Any incorrect value can (and almost certainly will) lead to corruption and a Segmentation Fault.
 
 Memory Management
@@ -48,8 +48,8 @@ Solving ODEs
 
 .. function:: monodromy(ode::acb_ode,z0=0)
 
-    Compute the Monodromy Matrix ode *ode* around *z0* through Cascade, which defaults to Zero.
+    Compute the monodromy matrix of *ode* around *z0* through Cascade, which defaults to Zero.
 
-.. warning:: 
+.. important:: 
 
     Providing z0 explicitly does not work currently. Most likely there is an issue with the garbage collector of Julia preventing a successfull ccall, which results in a Segmentation Fault.

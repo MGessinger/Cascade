@@ -11,7 +11,7 @@ Types, macros and constants
 
 .. type:: acb_ode_t
 
-    Contains a pointer to an array of the coefficients (polys), the maximum degree of all the polynomials, the order of the ODE and a pointer to an :type:`acb_poly` containing a power series solution.
+    Contains a pointer to an array of the coefficients, the maximum degree of all the polynomials, the order of the ODE and a pointer to an :type:`acb_poly` containing a power series solution.
 
     An *acb_ode_t* is defined as a pointer of type *acb_ode_struct*, permitting an *acb_ode_t* to be passed by reference.
 
@@ -50,21 +50,21 @@ Conversions
     Copies data from *src* to *dest*. If *dest* is *NULL*, a new `acb_ode_t` will be initialised and returned, otherwise only the data will be copied over. 
 
 .. note:: 
-    `acb_ode_set` creates a deep copy of *src* and is therefore rather slow! If *dest* is *NULL*, the a pointer to a new `acb_ode_struct` is returned, otherwise *dest* itself will be returned. In either case, the return value should not be ignored but instead be stored in *dest*!
+    `acb_ode_set` creates a deep copy of *src* and is therefore rather slow! If *dest* is *NULL*, a pointer to a new `acb_ode_struct` is returned, otherwise *dest* itself will be returned. In either case, the return value should not be ignored but instead be stored in *dest*!
 
 .. function:: slong acb_ode_reduce (acb_ode_t ODE)
 
     Finds the highest power of *z* that divides every polynomial and uses that to simplify the equation. The return value contains the exponent of z, that the equation was divided by.
 
-.. note::
-    The degree(ODE) is adjusted internally, but no heap (de-)allocation is performed. Therefore the return value of `acb_ode_reduce` must be stored in all cases and finally, before using `acb_ode_clear`, add that value to degree(ODE) to avoid memory leaks!
+.. caution::
+    The degree(ODE) is adjusted internally, but no heap (de-)allocation is performed. Therefore the return value of `acb_ode_reduce` must be stored in all cases and finally, before using `acb_ode_clear`, added back onto degree(ODE) to avoid memory leaks!
 
 Input and Output
 ------------------------------------------------------------------------
 
-.. function:: acb_poly_t* acb_ode_fread (ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits)
+.. function:: acb_ode_t* acb_ode_fread (ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits)
 
-    Reads a differential equation from the provided file. The formatting for the *n-th* summand is *yn\*(a0,a1,a2,...)* where *a0* are complex numbers in the form *an = x +yj* (notice the space before the *+*!). Example:
+    Reads a differential equation from the provided file. The formatting for the *n-th* summand is *yn\*(a0,a1,a2,...)* where *a0* are complex numbers in the form *an = x +yj* (notice the space before the *+*). Example:
 
 .. math::
     y2*(1,2,1) + y0*(1 +3j)
