@@ -1,7 +1,7 @@
 .. _Cascade:
 
-**cascade.h** - Solving complex differential equations
-======================================================
+**cascade.h** -- Solving complex differential equations
+==================================================================================
 
 Cascade implements complex differential equations in a variable of type :type:`acb_ode_struct`. It provides functionality for finding power series solutions around the origin, but is also capable of performing analytic continuation along a piecewise linear path to find power series expansions anywhere in the complex plane - provided the solution is analytic in a small neighborhood of the origin.
 
@@ -14,11 +14,11 @@ Functions
 
 .. function:: void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len, slong prec, int output_series)
 
-    Perform analytic continuation along *path*, which stores the corners of a polygon with *len* corners. The function computes a power series at every corner, which is then shifted to the next corner. After the end has been reached, the ODE is shifted back to the point of origin, but the power series is not changed. This allows to perform this function multiple times with varying initial conditions.
+    Perform analytic continuation along *path*, which stores the *len* cornes of a piecewise linear path in the complex plane. This is implemented by computing a power series expansion at each corner and then transforming the origin. The data stored inside *ODE* remains unchanged.
 
 .. function:: void find_monodromy_matrix (acb_mat_struct monodromy, acb_ode_t ODE, acb_struct z0, slong bits)
 
-    Compute the monodromy matrix of *ODE* and store it in *monodromy*. This is implemented by performing `analytic_continuation` for multiple different initial conditions.
+    Compute the monodromy matrix of *ODE* and store it in *monodromy*. This is implemented by performing `analytic_continuation` for multiple different initial conditions. Currently the path is implemented as a polygon with 32 corners.
 
 .. function:: int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits)
 
