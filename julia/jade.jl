@@ -2,7 +2,7 @@ module Jade
 
 using Nemo
 
-export acb_ode,monodromy,powerSeries,translateC,deleteC,setPolynomial,setInitialValues,acb_ode_legendre
+export acb_ode,monodromy,powerSeries,translateC,deleteC,setPolynomial,setInitialValues,acb_ode_legendre,acb_ode_bessel
 
 mutable struct acb_ode{T<:Integer}
     order::T
@@ -132,6 +132,13 @@ end
 function acb_ode_legendre(R::AcbPolyRing,n::Integer)
     ode = acb_ode([R(n*(n+1)),R([0,-2]),R([1,0,-1])])
     ode.odeC = ccall((:acb_ode_legendre,:libcascade),Ptr{nothing},(Cint,),n)
+    return ode
+end
+
+function acb_ode_bessel(R::AcbPolyRing,nu::acb)
+    p = R([0,0,1])
+    ode = acb_ode([p-nu*nu,R([0,1]),R([0,0,1])])
+    ode.odeC = ccall((:acb_ode_bessel,:libcascade),Ptr{nothing},(acb,Cint),nu,R.base_ring.prec)
     return ode
 end
 
