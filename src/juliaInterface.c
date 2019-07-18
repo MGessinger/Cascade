@@ -50,6 +50,5 @@ acb_poly_struct find_power_series_julia(acb_ode_t ODE, acb_struct in, slong bits
         return ODE->solution[0];
     }
     find_power_series(ODE, &in, bits);
-    flint_cleanup();
     return ODE->solution[0];
 }
