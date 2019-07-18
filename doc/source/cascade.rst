@@ -5,6 +5,30 @@
 
 Cascade implements complex differential equations in a variable of type :type:`acb_ode_struct`. It provides functionality for finding power series solutions around the origin, but is also capable of performing analytic continuation along a piecewise linear path to find power series expansions anywhere in the complex plane - provided the solution is analytic in a small neighborhood of the origin.
 
+Special Equations
+------------------
+
+.. function:: acb_ode_t acb_ode_legendre (ulong n)
+
+    Returns an `acb_ode_t` initialized to Legendre's equation parametrized by a natural number *n*. The initial values are set in such a way that the computed solutions yield the Legendre functions of first kind. Because these solutions are polynomial, this is a good starting point for working with Cascade. Legendre's equation is given by:
+
+.. math::
+    (1-x^2)y'' - 2xy' + n(n+1)y = 0.
+
+.. function:: acb_ode_t acb_ode_bessel (acb_struct nu, slong bits)
+
+    Returns an `acb_ode_t` initialized to Legendre's equation parametrized by a complex number *nu* with a precision of *bits*. The initial values are set in such a way that for integral nu, the Bessel functions of first kind are obtained. Because these have maximally unipotent monodromy around the origin, they are a good test for computing monodromy matrices. Bessel's equation is given by:
+
+.. math::
+    x^2y'' + xy' + (x^2 - \nu^2)y = 0
+
+.. function:: acb_ode_t acb_ode_hypgeom (acb_struct a, acb_struct b, acb_struct c, slong bits)
+
+    Returns an `acb_ode_t` initialized to Euler's hypergeometric equation. The initial values are set in such a way that the series expansion yields the hypergeometric series 2F1. Euler's equation is given by:
+
+.. math::
+    z(1-z)y'' + (c - (a + b + 1)z)y' -aby = 0
+
 Functions
 ------------------
 
