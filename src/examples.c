@@ -39,7 +39,6 @@ acb_ode_t acb_ode_legendre(ulong n)
 
 acb_ode_t acb_ode_bessel(acb_struct nu, slong bits)
 {
-    acb_printd(&nu,10);
     acb_poly_t* polys = flint_malloc(3*sizeof(acb_poly_t));
     if (polys == NULL)
         return NULL;
@@ -64,5 +63,46 @@ acb_ode_t acb_ode_bessel(acb_struct nu, slong bits)
         acb_poly_clear(polys[i]);
     flint_free(polys);
     acb_poly_clear(initial);
+    return ODE;
+}
+
+acb_ode_t acb_ode_hypgeom(acb_struct a, acb_struct b, acb_struct c, slong bits)
+{
+    acb_t temp;
+    acb_init(temp);
+    acb_poly_t* polys = flint_malloc(3*sizeof(acb_poly_t));
+    if (polys == NULL)
+        return NULL;
+    for (int i = 0; i < 3; i++)
+        acb_poly_init(polys[i]);
+    /* z*(1-z) */
+    acb_poly_set_coeff_si(polys[2],1,1);
+    acb_poly_set_coeff_si(polys[2],2,-1);
+    /* -ab */
+    acb_mul(temp,&a,&b,bits);
+    acb_neg(temp,temp);
+    acb_poly_set_coeff_acb(polys[0],0,temp);
+    /* c - (a+b+1)z */
+    acb_poly_set_coeff_acb(polys[1],0,&c);
+    acb_one(temp);
+    acb_add(temp,temp,&a,bits);
+    acb_add(temp,temp,&b,bits);
+    acb_neg(temp,temp);
+    acb_poly_set_coeff_acb(polys[1],1,temp);
+
+    acb_poly_t initial;
+    acb_poly_init(initial);
+    acb_poly_one(initial);
+    acb_mul(temp,&a,&b,bits);
+    acb_div(temp,temp,&c,bits);
+    acb_poly_set_coeff_acb(initial,1,temp);
+
+    acb_ode_t ODE = acb_ode_init(polys,initial,2);
+
+    for (int i = 0; i < 3; i++)
+        acb_poly_clear(polys[i]);
+    flint_free(polys);
+    acb_poly_clear(initial);
+    acb_clear(temp);
     return ODE;
 }
