@@ -2,7 +2,7 @@ module Jade
 
 using Nemo
 
-export acb_ode,monodromy,powerSeries,translateC,deleteC,setPolynomial,setInitialValues
+export acb_ode,monodromy,powerSeries,translateC,deleteC,setPolynomial,setInitialValues,acb_ode_legendre
 
 mutable struct acb_ode{T<:Integer}
     order::T
@@ -127,6 +127,12 @@ function monodromy(ode::acb_ode,z0=0)
     mono.base_ring = Ring
     deleteC(ode)
     return mono
+end
+
+function acb_ode_legendre(R::AcbPolyRing,n::Integer)
+    ode = acb_ode([R(n*(n+1)),R([0,-2]),R([1,0,-1])])
+    ode.odeC = ccall((:acb_ode_legendre,:libcascade),Ptr{nothing},(Cint,),n)
+    return ode
 end
 
 end

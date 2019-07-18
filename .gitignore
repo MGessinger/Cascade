@@ -2,6 +2,7 @@ data/
 libarb-2.dll
 CMakeFiles/
 CMakeCache.txt
+CMakeLists.txt.user
 cmake_install.cmake
 Makefile
 doc/build/
