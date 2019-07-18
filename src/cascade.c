@@ -102,6 +102,8 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits)
     } while (num_of_nonzero != 0);
     if (newIndex == NON_CONVERGENT)
         acb_ode_dump(ODE);
+    else
+        acb_poly_truncate(ODE->solution,order(ODE)+newIndex+1);
 
     mag_clear(ubound);
     acb_clear(newCoeff); acb_clear(oldCoeff);
@@ -120,7 +122,6 @@ void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len
     {
         acb_ode_shift(ODE,a,bits);
         acb_sub(a,path+time+1,path+time,bits);
-        acb_poly_truncate(ODE->solution,order(ODE));
         if (find_power_series(ODE,a,bits) == 0)
         {
             flint_printf("The power series expansion did not converge from ");

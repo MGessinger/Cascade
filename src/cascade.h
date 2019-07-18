@@ -4,6 +4,7 @@
 #include <acb_poly.h>
 #include <acb_mat.h>
 #include "acb_ode.h"
+#include "examples.h"
 
 #define TRUE 1
 
