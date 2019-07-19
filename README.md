@@ -38,8 +38,45 @@ print(p*8)
 The output of the above program should look something like this:
 
 ```bash
-0.000066 seconds (8 allocations: 864 bytes)
-[ 3.00000000000000000000000000000000000000000000000000000000000000000000000000000 + i*0, 0 + i*0, [-30.0000000000000000000000000000000000000000000000000000000000000000000000000000 +/- 1e-81] + i*0, 0 + i*0, [35.0000000000000000000000000000000000000000000000000000000000000000000000000000 +/- 1e-81] + i*0 ]
+  0.000117 seconds (8 allocations: 864 bytes)
+[ 0.37500000000000000000000000000000000000000000000000000000000000000000000000000 + i*0, 0 + i*0, [-3.75000000000000000000000000000000000000000000000000000000000000000000000000000 +/- 1e-81] + i*0, 0 + i*0, [ 4.37500000000000000000000000000000000000000000000000000000000000000000000000000 +/- 1e-81] + i*0 ]
+```
+
+Equivalently we can run the above program through Cascade directly. The code to perform the same computation as above, looks like this:
+```C
+#include <cascade.h>
+
+int main (int argc, char **argv)
+{
+    acb_ode_t ODE = acb_ode_legendre(4);
+    find_power_series(ODE,NULL,256);
+    acb_ode_dump(ODE,NULL);
+    acb_ode_clear(ODE);
+    return 0;
+}
+```
+
+To compile the program, run
+```bash
+gcc -o test test.c -lcascade
+```
+
+The output of *time ./test* should then look something like this:
+```bash
+Order: 2
+Degree: 2
+(20 + 0j)  +/-  (0, 0j)	(0 + 0j)  +/-  (0, 0j)	(0 + 0j)  +/-  (0, 0j)	
+(0 + 0j)  +/-  (0, 0j)	(-2 + 0j)  +/-  (0, 0j)	(0 + 0j)  +/-  (0, 0j)	
+(1 + 0j)  +/-  (0, 0j)	(0 + 0j)  +/-  (0, 0j)	(-1 + 0j)  +/-  (0, 0j)	
+
+[(0.375 + 0j)  +/-  (0, 0j)
+(0 + 0j)  +/-  (0, 0j)
+(-3.75 + 0j)  +/-  (2.8e-154, 0j)
+(0 + 0j)  +/-  (0, 0j)
+(4.375 + 0j)  +/-  (3.26e-154, 0j)]
+real	0m0,008s
+user	0m0,001s
+sys	0m0,007s
 ```
 
 ## Memory management
