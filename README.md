@@ -44,6 +44,11 @@ The output of the above program should look something like this:
 0 + i\*0,
 [35.0000000000000000000000000000000000000 +/- 1e-42] + i\*0 ]
 ```
+
+## Memory management
+
+Because Arb caches some constants internally, it is recommended to call *flint_cleaup()* at the end of your main program. This will clear Arb's internal cache and guarantee a clean output of *Valgrind*.
+
 ## Dependencies
 
 Cascade uses [Arb](https://arblib.org) to store complex numbers and [Flint](http://flintlib.org) to handle memory management. Therefore both of these libraries have to be installed in order to build Cascade.

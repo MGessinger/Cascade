@@ -11,9 +11,9 @@ Types, macros and constants
 
 .. type:: acb_ode_t
 
-    Contains a pointer to an array of the coefficients, the maximum degree of all the polynomials, the order of the ODE and a pointer to an :type:`acb_poly` containing a power series solution.
+    Contains a pointer to an array of the coefficients, the maximum degree of all the polynomials, the order of the ODE and a pointer to an `acb_poly` containing a power series solution.
 
-    An :type:`acb_ode_t` is defined as a pointer of type :type:`acb_ode_struct`, permitting an :type:`acb_ode_t` to be passed by reference.
+    An `acb_ode_t` is defined as a pointer of type `acb_ode_struct`, permitting an `acb_ode_t` to be passed by reference.
 
 .. macro:: diff_eq_poly(ODE, i)
 
@@ -41,6 +41,10 @@ Memory management
 .. function:: void acb_ode_clear (acb_ode_t ODE)
 
     Clears the memory allocated by a previous call to `acb_ode_init`.
+
+.. important::
+
+    Because Arb caches certain values internally, it is recommended to call *flint_cleanup()* at the end of your main program. This will clear Arb's cache and lead to a clean output when using *Valgrind*.
 
 Conversions
 ------------------------------------------------------------------------
