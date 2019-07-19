@@ -90,7 +90,8 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits)
             break;
         }
         acb_poly_set_coeff_acb(ODE->solution,newIndex+order(ODE),newCoeff);
-        acb_mul(power,power,in,bits);
+        if (in != NULL)
+            acb_mul(power,power,in,bits);
 
         if (++newIndex >= convergence_tolerance*bits)
         {
@@ -101,7 +102,7 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits)
         }
     } while (num_of_nonzero != 0);
     if (newIndex == NON_CONVERGENT)
-        acb_ode_dump(ODE);
+        acb_ode_dump(ODE,"odedump.txt");
     else
         acb_poly_truncate(ODE->solution,order(ODE)+newIndex+1);
 
@@ -174,7 +175,7 @@ int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits)
     if (mag_cmp_2exp_si(absValue,-bits*0.90) >= 0)
     {
         incorrect = 1;
-        acb_ode_dump(ODE);
+        acb_ode_dump(ODE,"odedump.txt");
     }
 
     acb_poly_clear(summand);

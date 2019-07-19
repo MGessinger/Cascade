@@ -73,6 +73,6 @@ Input and Output
 .. math::
     y2*(1,2,1) + y0*(1 +3j)
 
-.. function:: void acb_ode_dump (acb_ode_t ODE)
+.. function:: void acb_ode_dump (acb_ode_t ODE, char* file)
 
-    Dumps the data stored in the `acb_ode_struct` into *./odedump.txt*. This should never be necessary unless for testing.
+    Dumps the data stored in the `acb_ode_struct` into *file*. To print to *stdout*, set *file = NULL*.

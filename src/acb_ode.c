@@ -106,6 +106,7 @@ void acb_ode_clear (acb_ode_t ODE)
     flint_free(ODE->polys);
     acb_poly_clear(ODE->solution);
     flint_free(ODE);
+    flint_cleanup();
     return;
 }
 
@@ -277,9 +278,11 @@ slong acb_ode_reduce (acb_ode_t ODE)
     return reduced;
 }
 
-void acb_ode_dump(acb_ode_t ODE)
+void acb_ode_dump(acb_ode_t ODE, char *file)
 {
-    FILE *out = fopen("odedump.txt","w");
+    FILE *out = stdout;
+    if (file != NULL)
+        out = fopen(file,"w");
     if (out == NULL)
         return;
     flint_fprintf(out,"Order: %w\nDegree: %w\n",order(ODE),degree(ODE));
@@ -294,6 +297,7 @@ void acb_ode_dump(acb_ode_t ODE)
     }
     flint_fprintf(out,"\n");
     acb_poly_fprintd(out,ODE->solution,10);
-    fclose(out);
+    if (out != stdout)
+        fclose(out);
     return;
 }

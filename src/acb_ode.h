@@ -37,7 +37,7 @@ void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits);
 
 acb_ode_t acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits);
 
-void acb_ode_dump(acb_ode_t ODE);
+void acb_ode_dump(acb_ode_t ODE, char *file);
 
 void parsePoly(acb_poly_t polyOut, const char *polyString, slong strLength, slong bits);
 
