@@ -120,6 +120,7 @@ function monodromy(ode::acb_ode,z0::acb=ode.polys[1].parent.base_ring(0))
     if ode.odeC == Ptr{nothing}(0)
         translateC(ode);
     end
+    Ring = ode.polys[1].parent.base_ring
     S = MatrixSpace(Ring,ode.order,ode.order)
     mono = S(1)
     ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(acb_mat,Ptr{nothing},acb,Cint),mono,ode.odeC,Ring(z0),Ring.prec)
