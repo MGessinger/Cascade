@@ -10,20 +10,18 @@ This library can be build from source as a shared object library through cmake. 
 ```bash
 cmake ./
 make
+make install
 ```
+Depending on your system, *make install* might have to be run with root priviliges.
 
 ## Jade
 
-Along with Cascade, this project comes with Jade, an interface to Cascade, which can be used from the [Julia](https://julialang.org) command line. To use Jade, place the shared library file created by cmake  in 
-```bash
-/path/to/julia/lib/julia/libcascade.so
-```
-Additionally, either place the file Jade.jl somewhere where Julia can find it or add it to the LOAD_PATH via
+Along with Cascade, this project comes with Jade, an interface to Cascade, which can be used from the [Julia](https://julialang.org) command line. To use Jade, place the file Jade.jl somewhere where Julia can find it or add it to the LOAD_PATH via
 
 ```bash
 push!(LOAD_PATH, "/path/to/jade")
 ```
-Notice that only the directory path has to be given, not the file itself!
+Note that only the directory path has to be given, not the file itself!
 
 ## Examples
 
