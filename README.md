@@ -1,7 +1,7 @@
 # Cascade - The C Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations
 
 Welcome to Cascade v0.5.3.
-Cascade is a library designed to store and solve differential equations to arbitrary precision. This is accomplished through the use of Arblib's acb data type, which uses ball arithmetic to store arbitrary precision floats with error bounds. Solutions are computed as power series expanions around the origin using a recursion relation between the coefficients. With the help of analytic continuation this can be turned into a solution anywhere in the complex plane.
+Cascade is a library designed to store and solve differential equations to arbitrary precision. This is accomplished through the use of [Arblib](https://arblib.org)'s acb data type, which uses ball arithmetic to store arbitrary precision floats with error bounds. Solutions are computed as power series expanions around the origin using a recursion relation between the coefficients. With the help of analytic continuation this can be turned into a solution anywhere in the complex plane.
 
 ## Installation
 
@@ -25,29 +25,26 @@ Note that only the directory path has to be given, not the file itself!
 
 ## Examples
 
-The easiest way to get started, is through Julia. The following example creates an *acb_ode* storing Legendre's differential equation for $n = 4$. Then a solution is computed with a precision of 128 bits (which is equivalent to 38 decimal digits) and printed to the screen.
+The easiest way to get started, is through Julia. The following example creates an *acb_ode* storing Legendre's differential equation for *n = 4*. Then a solution is computed with a precision of 256 bits (which is equivalent to 77 decimal digits) and printed to the screen.
 
 ```julia
 using Jade
-S = ComplexField(128);
+S = ComplexField(256);
 R = acbPolyRing(S,:z);
-A = acb\_ode\_legendre(4);
+A = acb_ode_legendre(R,4);
 @time p = powerSeries(A,S(1));
 print(p*8)
 ```
 The output of the above program should look something like this:
 
 ```bash
-0.000117 seconds (8 allocations: 864 bytes)
-[ 3.00000000000000000000000000000000000000 + i\*0, 0 + i\*0,
-[-30.0000000000000000000000000000000000000 +/- 1e-42] + i\*0,
-0 + i\*0,
-[35.0000000000000000000000000000000000000 +/- 1e-42] + i\*0 ]
+0.000066 seconds (8 allocations: 864 bytes)
+[ 3.00000000000000000000000000000000000000000000000000000000000000000000000000000 + i*0, 0 + i*0, [-30.0000000000000000000000000000000000000000000000000000000000000000000000000000 +/- 1e-81] + i*0, 0 + i*0, [35.0000000000000000000000000000000000000000000000000000000000000000000000000000 +/- 1e-81] + i*0 ]
 ```
 
 ## Memory management
 
-Because Arb caches some constants internally, it is recommended to call *flint_cleaup()* at the end of your main program. This will clear Arb's internal cache and guarantee a clean output of *Valgrind*.
+Because Arb caches some constants internally, it is recommended to call *flint_cleanup()* at the end of your main program. This will clear Arb's internal cache and guarantee a clean output of *Valgrind*.
 
 ## Dependencies
 
