@@ -65,10 +65,7 @@ Solving ODEs
 
     Copute a power series solution of *ode*, which converges at *target*, through Cascade. The precision is automatically determined from the polynomials in *ode*.
 
-.. function:: Jade.monodromy(ode::acb_ode,z0=0)
+.. function:: Jade.monodromy(ode::acb_ode,z0::acb=0)
 
     Compute the monodromy matrix of *ode* around *z0* through Cascade, which defaults to Zero.
 
-.. important:: 
-
-    Providing z0 explicitly does not work currently. Most likely there is an issue with the garbage collector of Julia preventing a successfull ccall, which results in a Segmentation Fault.
