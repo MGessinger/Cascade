@@ -15,7 +15,7 @@ function __init__()
     print("  |  _  __  ,__ \n")
     print("  | |_| | \\ |__ \n")
     print("\\_/ | | |_/ |__ \n")
-    print("\nThis is JADE v.0.7, an interface to CASCADE,\n\n")
+    print("\nThis is JADE v.0.8, an interface to CASCADE,\n\n")
     print("The C-Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations!\n")
 end
 
@@ -116,14 +116,16 @@ function powerSeries(ode::acb_ode,target::acb)
     return polyRing(p)
 end
 
-function monodromy(ode::acb_ode,z0::acb=ode.polys[1].parent.base_ring(0))
+function monodromy(ode::acb_ode,z0::acb)
     if ode.odeC == Ptr{nothing}(0)
         translateC(ode);
     end
     Ring = ode.polys[1].parent.base_ring
     S = MatrixSpace(Ring,ode.order,ode.order)
     mono = S(1)
-    ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(acb_mat,Ptr{nothing},acb,Cint),mono,ode.odeC,Ring(z0),Ring.prec)
+    M = Ref{acb_mat}(mono)
+    Z = Ref{acb}(z0)
+    ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ref{acb_mat},Ptr{nothing},Ref{acb},Cint),M,ode.odeC,Z,Ring.prec)
     mono.base_ring = Ring
     deleteC(ode)
     return mono
@@ -138,13 +140,17 @@ end
 function acb_ode_bessel(R::AcbPolyRing,nu::acb)
     p = R([0,0,1])
     ode = acb_ode([p-nu*nu,R([0,1]),R([0,0,1])])
-    ode.odeC = ccall((:acb_ode_bessel,:libcascade),Ptr{nothing},(acb,Cint),nu,R.base_ring.prec)
+    N = Ref{acb}(nu)
+    ode.odeC = ccall((:acb_ode_bessel,:libcascade),Ptr{nothing},(Ref{acb},Cint),N,R.base_ring.prec)
     return ode
 end
 
 function acb_ode_hypgeom(R::AcbPolyRing,a::acb,b::acb,c::acb)
     ode = acb_ode([R(-a*b),R([c,(a+b+1)]),R([0,1,-1])])
-    ode.odeC = ccall((:acb_ode_hypgeom,:libcascade),Ptr{nothing},(acb,acb,acb,Cint),a,b,c,R.base_ring.prec)
+    A = Ref{acb}(a)
+    B = Ref{acb}(b)
+    C = Ref{acb}(c)
+    ode.odeC = ccall((:acb_ode_hypgeom,:libcascade),Ptr{nothing},(Ref{acb},Ref{acb},Ref{acb},Cint),A,B,C,R.base_ring.prec)
     return ode
 end
 

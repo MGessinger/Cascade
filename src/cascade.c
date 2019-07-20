@@ -187,7 +187,7 @@ int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits)
     return incorrect;
 }
 
-void find_monodromy_matrix (acb_mat_struct monodromy, acb_ode_t ODE, acb_struct z0, slong bits)
+void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong bits)
 {
     if (ODE == NULL)
     {
@@ -196,7 +196,11 @@ void find_monodromy_matrix (acb_mat_struct monodromy, acb_ode_t ODE, acb_struct 
     }
     slong steps = 32;
     acb_ptr path = _acb_vec_init(steps+1);
-    acb_t radOfConv; acb_init(radOfConv);
+    acb_t radOfConv;
+    acb_init(radOfConv);
+    /* Move to the given singularity */
+    if (acb_is_finite(z0))
+        acb_ode_shift(ODE,z0,bits);
 
     /* Choose a path for the analytic continuation */
     radiusOfConvergence(ODE,arb_midref(acb_realref(radOfConv)),bits);
@@ -213,15 +217,16 @@ void find_monodromy_matrix (acb_mat_struct monodromy, acb_ode_t ODE, acb_struct 
     {
         acb_poly_zero(ODE->solution);
         acb_poly_set_coeff_si(ODE->solution,i,1);
-        analytic_continuation(acb_mat_entry(&monodromy,i,0),ODE,path,steps+1,bits,TRUE);
+        analytic_continuation(acb_mat_entry(monodromy,i,0),ODE,path,steps+1,bits,TRUE);
     }
+    acb_mat_transpose(monodromy,monodromy);
     acb_clear(radOfConv);
     _acb_vec_clear(path,steps+1);
-    /* Move to the given singularity */
-    if (acb_is_finite(&z0))
+    /* Move back to the start */
+    if (acb_is_finite(z0))
     {
-        acb_neg(&z0,&z0);
-        acb_ode_shift(ODE,&z0,bits);
+        acb_neg(z0,z0);
+        acb_ode_shift(ODE,z0,bits);
     }
     return;
 }

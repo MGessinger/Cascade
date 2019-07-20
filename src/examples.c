@@ -37,7 +37,7 @@ acb_ode_t acb_ode_legendre(ulong n)
     return ODE;
 }
 
-acb_ode_t acb_ode_bessel(acb_struct nu, slong bits)
+acb_ode_t acb_ode_bessel(acb_t nu, slong bits)
 {
     acb_poly_t* polys = flint_malloc(3*sizeof(acb_poly_t));
     if (polys == NULL)
@@ -47,12 +47,12 @@ acb_ode_t acb_ode_bessel(acb_struct nu, slong bits)
     acb_poly_set_coeff_si(polys[2],2,1);
     acb_poly_set_coeff_si(polys[1],1,1);
     acb_poly_set_coeff_si(polys[0],2,1);
-    acb_mul(&nu,&nu,&nu,bits);
-    acb_neg(acb_poly_get_coeff_ptr(polys[0],0),&nu);
+    acb_mul(nu,nu,nu,bits);
+    acb_neg(acb_poly_get_coeff_ptr(polys[0],0),nu);
 
     acb_poly_t initial;
     acb_poly_init(initial);
-    if (acb_is_zero(&nu))
+    if (acb_is_zero(nu))
         acb_poly_one(initial);
     else
         acb_poly_set_coeff_si(initial,1,1);
@@ -66,8 +66,14 @@ acb_ode_t acb_ode_bessel(acb_struct nu, slong bits)
     return ODE;
 }
 
-acb_ode_t acb_ode_hypgeom(acb_struct a, acb_struct b, acb_struct c, slong bits)
+acb_ode_t acb_ode_hypgeom(acb_t a, acb_t b, acb_t c, slong bits)
 {
+    acb_printd(a,15);
+    flint_printf("\n");
+    acb_printd(b,15);
+    flint_printf("\n");
+    acb_printd(c,15);
+    flint_printf("\n");
     acb_t temp;
     acb_init(temp);
     acb_poly_t* polys = flint_malloc(3*sizeof(acb_poly_t));
@@ -79,22 +85,22 @@ acb_ode_t acb_ode_hypgeom(acb_struct a, acb_struct b, acb_struct c, slong bits)
     acb_poly_set_coeff_si(polys[2],1,1);
     acb_poly_set_coeff_si(polys[2],2,-1);
     /* -ab */
-    acb_mul(temp,&a,&b,bits);
+    acb_mul(temp,a,b,bits);
     acb_neg(temp,temp);
     acb_poly_set_coeff_acb(polys[0],0,temp);
     /* c - (a+b+1)z */
-    acb_poly_set_coeff_acb(polys[1],0,&c);
+    acb_poly_set_coeff_acb(polys[1],0,c);
     acb_one(temp);
-    acb_add(temp,temp,&a,bits);
-    acb_add(temp,temp,&b,bits);
+    acb_add(temp,temp,a,bits);
+    acb_add(temp,temp,b,bits);
     acb_neg(temp,temp);
     acb_poly_set_coeff_acb(polys[1],1,temp);
 
     acb_poly_t initial;
     acb_poly_init(initial);
     acb_poly_one(initial);
-    acb_mul(temp,&a,&b,bits);
-    acb_div(temp,temp,&c,bits);
+    acb_mul(temp,a,b,bits);
+    acb_div(temp,temp,c,bits);
     acb_poly_set_coeff_acb(initial,1,temp);
 
     acb_ode_t ODE = acb_ode_init(polys,initial,2);

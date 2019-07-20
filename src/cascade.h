@@ -12,7 +12,7 @@ ulong find_power_series (acb_ode_t ODE, acb_t in, slong bits);
 
 void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len, slong prec, int output_series);
 
-void find_monodromy_matrix (acb_mat_struct monodromy, acb_ode_t ODE, acb_struct z0, slong bits);
+void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong bits);
 
 int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits);
 
