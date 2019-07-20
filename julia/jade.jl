@@ -128,7 +128,7 @@ function powerSeries(ode::acb_ode,target::acb)
     return polyRing(p)
 end
 
-function monodromy(ode::acb_ode,z0::acb)
+function monodromy(ode::acb_ode,z0=0)
     if ode.odeC == Ptr{nothing}(0)
         translateC(ode);
     end
@@ -136,7 +136,7 @@ function monodromy(ode::acb_ode,z0::acb)
     S = MatrixSpace(Ring,ode.order,ode.order)
     mono = S(1)
     M = Ref{acb_mat}(mono)
-    Z = Ref{acb}(z0)
+    Z = Ref{acb}(Ring(z0))
     ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ref{acb_mat},Ptr{nothing},Ref{acb},Cint),M,ode.odeC,Z,Ring.prec)
     mono.base_ring = Ring
     deleteC(ode)

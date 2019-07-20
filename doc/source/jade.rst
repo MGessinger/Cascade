@@ -31,7 +31,7 @@ Memory Management
 
 .. function:: Jade.deleteC(ode::acb_ode)
 
-    The C-style struct stored in *ode* is deallocated by Cascade. This function is not exported because it usually doesn't need to be calles manually!
+    The C-style struct stored in *ode* is deallocated by Cascade. This function is not exported because it usually doesn't need to be called manually!
 
 Special Equations
 -------------------
@@ -65,7 +65,7 @@ Solving ODEs
 
     Copute a power series solution of *ode*, which converges at *target*, through Cascade. The precision is automatically determined from the polynomials in *ode*.
 
-.. function:: Jade.monodromy(ode::acb_ode,z0::acb=0)
+.. function:: Jade.monodromy(ode::acb_ode,z0=0)
 
-    Compute the monodromy matrix of *ode* around *z0* through Cascade, which defaults to Zero.
+    Compute the monodromy matrix of *ode* around *z0* through Cascade. The value of *z0* defaults to zero.
 
