@@ -37,6 +37,18 @@ function acb_ode(polys::Array{acb_poly,1})
     return A
 end
 
+function Base.show(io::IO, A::acb_ode)
+    if A.odeC != Ptr{nothing}(0)
+        ccall((:acb_ode_dump,:libcascade),Cvoid,(Ptr{nothing},Ptr{nothing}),A.odeC,C_NULL)
+        return
+    end
+    print("Order: ",A.order)
+    for i = 1:length(A.polys)
+        print("\npolys[",i,"] = ",A.polys[i])
+    end
+end
+    
+
 function setPolynomial(ode::acb_ode, index::Integer, polynomial::acb_poly)
     if ode.odeC != Ptr{nothing}(0)
         deleteC(ode)

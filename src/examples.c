@@ -68,12 +68,6 @@ acb_ode_t acb_ode_bessel(acb_t nu, slong bits)
 
 acb_ode_t acb_ode_hypgeom(acb_t a, acb_t b, acb_t c, slong bits)
 {
-    acb_printd(a,15);
-    flint_printf("\n");
-    acb_printd(b,15);
-    flint_printf("\n");
-    acb_printd(c,15);
-    flint_printf("\n");
     acb_t temp;
     acb_init(temp);
     acb_poly_t* polys = flint_malloc(3*sizeof(acb_poly_t));

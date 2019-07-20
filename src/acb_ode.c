@@ -293,7 +293,7 @@ void acb_ode_dump(acb_ode_t ODE, char *file)
     flint_fprintf(out,"Order: %w\nDegree: %w\n",order(ODE),degree(ODE));
     for (slong i = 0; i <= order(ODE); i++)
     {
-        flint_fprintf(out,"diff_eq_poly(ODE,i) = ");
+        flint_fprintf(out,"diff_eq_poly(ODE,%w) = ",i);
         for (slong j = 0; j <= degree(ODE); j++)
         {
             acb_fprintd(out,diff_eq_coeff(ODE,i,j),20);
