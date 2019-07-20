@@ -15,14 +15,14 @@ Special Equations
 .. math::
     (1-x^2)y'' - 2xy' + n(n+1)y = 0.
 
-.. function:: acb_ode_t acb_ode_bessel (acb_struct nu, slong bits)
+.. function:: acb_ode_t acb_ode_bessel (acb_t nu, slong bits)
 
     Returns an `acb_ode_t` initialized to Legendre's equation parametrized by a complex number *nu* with a precision of *bits*. The initial values are set in such a way that for integral nu, the Bessel functions of first kind are obtained. Because these have maximally unipotent monodromy around the origin, they are a good test for computing monodromy matrices. Bessel's equation is given by:
 
 .. math::
     x^2y'' + xy' + (x^2 - \nu^2)y = 0
 
-.. function:: acb_ode_t acb_ode_hypgeom (acb_struct a, acb_struct b, acb_struct c, slong bits)
+.. function:: acb_ode_t acb_ode_hypgeom (acb_t a, acb_t b, acb_t c, slong bits)
 
     Returns an `acb_ode_t` initialized to Euler's hypergeometric equation. The initial values are set in such a way that the series expansion yields the hypergeometric series 2F1. Euler's equation is given by:
 
@@ -40,7 +40,7 @@ Functions
 
     Perform analytic continuation along *path*, which stores the *len* cornes of a piecewise linear path in the complex plane. This is implemented by computing a power series expansion at each corner and then transforming the origin. The data stored inside *ODE* remains unchanged.
 
-.. function:: void find_monodromy_matrix (acb_mat_struct monodromy, acb_ode_t ODE, acb_struct z0, slong bits)
+.. function:: void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong bits)
 
     Compute the monodromy matrix of *ODE* and store it in *monodromy*. This is implemented by performing `analytic_continuation` for multiple different initial conditions. Currently the path is implemented as a polygon with 32 corners.
 

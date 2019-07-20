@@ -66,7 +66,7 @@ Conversions
 Input and Output
 ------------------------------------------------------------------------
 
-.. function:: acb_ode_t* acb_ode_fread (ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits)
+.. function:: acb_ode_t acb_ode_fread (ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits)
 
     Reads a differential equation from the provided file. The formatting for the *n-th* summand is *yn\*(a0,a1,a2,...)* where *a0* are complex numbers in the form *an = x +yj* (notice the space before the *+*). Example:
 
