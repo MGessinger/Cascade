@@ -7,12 +7,12 @@ Author: Matthias Gessinger
 
 ## Installation
 
-This library can be build from source as a shared object library through cmake. To build the library, open a terminal in this directory and run the commands
+This library can be build from source as a shared object library through cmake. To build the library, open a terminal in the ./build/ directory and run the commands
 
 ```bash
 cmake ./
-make
-make install
+make -C build/
+make install -C build/
 ```
 Depending on your system, *make install* might have to be run with root priviliges.
 
