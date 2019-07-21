@@ -16,6 +16,6 @@ void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len
 
 void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong bits);
 
-void radiusOfConvergence(acb_ode_t ODE, arf_t radOfConv, slong bits);
+void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong bits);
 
 #endif /* CASCADE_H_ */

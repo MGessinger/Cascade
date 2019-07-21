@@ -203,7 +203,7 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
         acb_ode_shift(ODE,z0,bits);
 
     /* Choose a path for the analytic continuation */
-    radiusOfConvergence(ODE,arb_midref(acb_realref(radOfConv)),bits);
+    radiusOfConvergence(acb_realref(radOfConv),ODE,bits);
     if (acb_is_zero(radOfConv))
         return;
     acb_div_si(radOfConv,radOfConv,convergence_tolerance,bits);
@@ -231,39 +231,65 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
     return;
 }
 
-void radiusOfConvergence(acb_ode_t ODE, arf_t radOfConv, slong bits)
+void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong bits)
 {
+    /* Find the radius of cervegence of the power series expansion */
     if (ODE == NULL)
     {
-        arf_nan(radOfConv);
+        arb_indeterminate(radOfConv);
         return;
     }
-    if (!acb_is_zero(diff_eq_coeff(ODE,order(ODE),0)))
+    if (!acb_contains_zero(diff_eq_coeff(ODE,order(ODE),0)))
     {
         flint_printf("The point z0 = 0 is not singular. Do you really want to compute the monodromy? (y/n)\n");
-        if (getchar() == 'n')
+        if (getchar() != 'y')
         {
-            arf_zero(radOfConv);
+            arb_zero(radOfConv);
             return;
         }
     }
-    acb_t radius;
-    acb_init(radius);
-    slong rootOrder = 0;
-    while (acb_contains_zero(diff_eq_coeff(ODE,order(ODE),rootOrder)))
+    /* A new polynomial whose coefficients are the moduli of the original coeffs */
+    arb_poly_t realPol;
+    arb_poly_init(realPol);
+    /* Stores the value and the derivative of realPol: */
+    arb_t val, der;
+    arb_init(val);
+    arb_init(der);
+    /* A counter to prevent infinite loops */
+    slong it = 0;
+
+    /* Store the vector in ODE back into a polynomial and divide out the root(s) at zero */
+    arb_zero(radOfConv);
+    for (slong i = 0; i <= degree(ODE); i++)
     {
-        rootOrder++;
-        if (rootOrder == degree(ODE))
+        acb_get_abs_ubound_arf(arb_midref(radOfConv),diff_eq_coeff(ODE,order(ODE),i),bits);
+        arb_poly_set_coeff_arb(realPol,i,radOfConv);
+    }
+    arb_poly_shift_right(realPol,realPol,arb_poly_valuation(realPol));
+    arb_neg(acb_poly_get_coeff_ptr(realPol,0),acb_poly_get_coeff_ptr(realPol,0));
+    arb_one(radOfConv);
+
+    /* Find any root less than one through Euler's method */
+    do
+    {
+        arb_poly_evaluate2(val,der,realPol,radOfConv,bits);
+        if (arb_is_negative(val))
             break;
-    }
-    if (rootOrder == degree(ODE))
-    {
-        arf_one(radOfConv);
-        return;
-    }
-    acb_div(radius,diff_eq_coeff(ODE,order(ODE),rootOrder),diff_eq_coeff(ODE,order(ODE),rootOrder+1),bits);
-    acb_mul_si(radius,radius,degree(ODE)-rootOrder,bits);
-    acb_get_abs_lbound_arf(radOfConv,radius,bits);
-    acb_clear(radius);
+        /* If the polynomial is not negative yet, perform one Euler step */
+        arb_div(val,val,der,bits);
+        if (arb_is_nonpositive(val))
+            arb_div_ui(radOfConv,radOfConv,2,bits);
+        else
+            arb_sub(radOfConv,radOfConv,val,bits);
+        it++;
+    } while (it < bits);
+    /* If radOfConv is nonpositive, somthing went horribly wrong! */
+    if (arb_is_nonpositive(radOfConv))
+        arb_indeterminate(radOfConv);
+
+    mag_zero(arb_radref(radOfConv));
+    arb_clear(val);
+    arb_clear(der);
+    arb_poly_clear(realPol);
     return;
 }
