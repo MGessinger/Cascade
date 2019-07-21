@@ -112,6 +112,43 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits)
     return newIndex;
 }
 
+int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits)
+{
+    acb_poly_t result, polyder, summand;
+    acb_poly_init(polyder);
+    acb_poly_init(summand);
+    acb_poly_init(result);
+
+    acb_t res; acb_init(res);
+    mag_t absValue; mag_init(absValue);
+    int incorrect = 0;
+
+    acb_poly_set(polyder,ODE->solution);
+    for (slong n = 0; n <= order(ODE); n++)
+    {
+        if (polys[n] == NULL)
+            continue;
+        acb_poly_mul(summand,polyder,polys[n],bits);
+        acb_poly_add(result,result,summand,bits);
+        acb_poly_derivative(polyder,polyder,bits);
+    }
+    acb_poly_evaluate(res,result,z,bits);
+    acb_get_mag(absValue,res);
+    if (mag_cmp_2exp_si(absValue,-bits*0.90) >= 0)
+    {
+        incorrect = 1;
+        acb_ode_dump(ODE,"odedump.txt");
+    }
+
+    acb_poly_clear(summand);
+    acb_poly_clear(polyder);
+    acb_poly_clear(result);
+
+    mag_clear(absValue);
+    acb_clear(res);
+    return incorrect;
+}
+
 void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len, slong bits, int output_solution)
 {
     /* Evaluate a solution along the given piecewise linear path */
@@ -148,43 +185,6 @@ void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len
 
     acb_clear(a);
     return;
-}
-
-int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits)
-{
-    acb_poly_t result, polyder, summand;
-    acb_poly_init(polyder);
-    acb_poly_init(summand);
-    acb_poly_init(result);
-
-    acb_t res; acb_init(res);
-    mag_t absValue; mag_init(absValue);
-    int incorrect = 0;
-
-    acb_poly_set(polyder,ODE->solution);
-    for (slong n = 0; n <= order(ODE); n++)
-    {
-        if (polys[n] == NULL)
-            continue;
-        acb_poly_mul(summand,polyder,polys[n],bits);
-        acb_poly_add(result,result,summand,bits);
-        acb_poly_derivative(polyder,polyder,bits);
-    }
-    acb_poly_evaluate(res,result,z,bits);
-    acb_get_mag(absValue,res);
-    if (mag_cmp_2exp_si(absValue,-bits*0.90) >= 0)
-    {
-        incorrect = 1;
-        acb_ode_dump(ODE,"odedump.txt");
-    }
-
-    acb_poly_clear(summand);
-    acb_poly_clear(polyder);
-    acb_poly_clear(result);
-
-    mag_clear(absValue);
-    acb_clear(res);
-    return incorrect;
 }
 
 void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong bits)
@@ -228,5 +228,42 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
         acb_neg(z0,z0);
         acb_ode_shift(ODE,z0,bits);
     }
+    return;
+}
+
+void radiusOfConvergence(acb_ode_t ODE, arf_t radOfConv, slong bits)
+{
+    if (ODE == NULL)
+    {
+        arf_nan(radOfConv);
+        return;
+    }
+    if (!acb_is_zero(diff_eq_coeff(ODE,order(ODE),0)))
+    {
+        flint_printf("The point z0 = 0 is not singular. Do you really want to compute the monodromy? (y/n)\n");
+        if (getchar() == 'n')
+        {
+            arf_zero(radOfConv);
+            return;
+        }
+    }
+    acb_t radius;
+    acb_init(radius);
+    slong rootOrder = 0;
+    while (acb_contains_zero(diff_eq_coeff(ODE,order(ODE),rootOrder)))
+    {
+        rootOrder++;
+        if (rootOrder == degree(ODE))
+            break;
+    }
+    if (rootOrder == degree(ODE))
+    {
+        arf_one(radOfConv);
+        return;
+    }
+    acb_div(radius,diff_eq_coeff(ODE,order(ODE),rootOrder),diff_eq_coeff(ODE,order(ODE),rootOrder+1),bits);
+    acb_mul_si(radius,radius,degree(ODE)-rootOrder,bits);
+    acb_get_abs_lbound_arf(radOfConv,radius,bits);
+    acb_clear(radius);
     return;
 }
