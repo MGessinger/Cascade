@@ -22,7 +22,7 @@ else(MSVC)
   target_compile_options(cascade PRIVATE -Wall -Wextra -pedantic -O3 -s)
 endif(MSVC)
 
-set_target_properties(cascade PROPERTIES PUBLIC_HEADER "src/cascade.h;src/acb_ode.h;src/examples.h")
+set_target_properties(cascade PROPERTIES PUBLIC_HEADER "../src/cascade.h;../src/acb_ode.h;../src/examples.h")
 
 install(TARGETS cascade
      RUNTIME DESTINATION bin COMPONENT runtime
