@@ -262,7 +262,10 @@ void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong bits)
     arb_zero(radOfConv);
     for (slong i = 0; i <= degree(ODE); i++)
     {
-        acb_get_abs_ubound_arf(arb_midref(radOfConv),diff_eq_coeff(ODE,order(ODE),i),bits);
+        if (acb_contains_zero(diff_eq_coeff(ODE,order(ODE),i)))
+            arb_zero(radOfConv);
+        else
+            acb_get_abs_ubound_arf(arb_midref(radOfConv),diff_eq_coeff(ODE,order(ODE),i),bits);
         arb_poly_set_coeff_arb(realPol,i,radOfConv);
     }
     arb_poly_shift_right(realPol,realPol,arb_poly_valuation(realPol));
@@ -277,7 +280,7 @@ void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong bits)
             break;
         /* If the polynomial is not negative yet, perform one Euler step */
         arb_div(val,val,der,bits);
-        if (arb_is_nonpositive(val))
+        if (arb_contains_negative(val))
             arb_div_ui(radOfConv,radOfConv,2,bits);
         else
             arb_sub(radOfConv,radOfConv,val,bits);
