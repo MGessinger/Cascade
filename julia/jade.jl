@@ -7,7 +7,7 @@ export acb_ode,monodromy,powerSeries,setPolynomial,setInitialValues,acb_ode_lege
 mutable struct acb_ode{T<:Integer}
     order::T
     polys::Array{acb_poly,1}
-    odeC::Ptr{nothing}
+    odeC::Ptr{Nothing}
 end
 
 function __init__()
@@ -15,7 +15,7 @@ function __init__()
     print("  |  _  __  ,__ \n")
     print("  | |_| | \\ |__ \n")
     print("\\_/ | | |_/ |__ \n")
-    print("\nThis is JADE v.0.8, an interface to CASCADE,\n\n")
+    print("\nThis is JADE v.0.9, an interface to CASCADE,\n\n")
     print("The C-Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations!\n")
 end
 
@@ -31,15 +31,15 @@ function acb_ode(polys::Array{acb_poly,1})
     if order < 0
         return
     end
-    A = acb_ode(order,Array{acb_poly,1}(undef,order+1),Ptr{nothing}(0))
+    A = acb_ode(order,Array{acb_poly,1}(undef,order+1),C_NULL)
     A.polys = polys
     finalizer(deleteC, A)
     return A
 end
 
 function Base.show(io::IO, A::acb_ode)
-    if A.odeC != Ptr{nothing}(0)
-        ccall((:acb_ode_dump,:libcascade),Cvoid,(Ptr{nothing},Ptr{nothing}),A.odeC,C_NULL)
+    if A.odeC != C_NULL
+        ccall((:acb_ode_dump,:libcascade),Cvoid,(Ptr{Nothing},Ptr{Nothing}),A.odeC,C_NULL)
         return
     end
     print("Order: ",A.order)
@@ -50,7 +50,7 @@ end
     
 
 function setPolynomial(ode::acb_ode, index::Integer, polynomial::acb_poly)
-    if ode.odeC != Ptr{nothing}(0)
+    if ode.odeC != C_NULL
         deleteC(ode)
     end
     if index > ode.order+1
@@ -86,7 +86,7 @@ function setPolynomial(ode::acb_ode, index::Integer, polynomial::acb_poly)
 end
 
 function translateC(ode::acb_ode)
-    if ode.odeC != Ptr{nothing}(0)
+    if ode.odeC != C_NULL
         deleteC(ode)
     end
     deg = 0
@@ -95,41 +95,41 @@ function translateC(ode::acb_ode)
             deg = degree(p)
         end
     end
-    A = ccall( (:acb_ode_setup_blank,"libcascade"), Ptr{nothing}, (Cint,Cint), deg, ode.order)
+    A = ccall( (:acb_ode_setup_blank,"libcascade"), Ptr{Nothing}, (Cint,Cint), deg, ode.order)
     for i = 1:ode.order+1
-        ccall( (:acb_ode_set_poly,"libcascade"), Cint, (Ptr{nothing},acb_poly,Cint), A, ode.polys[i], i-1)
+        ccall( (:acb_ode_set_poly,"libcascade"), Cint, (Ptr{Nothing},acb_poly,Cint), A, ode.polys[i], i-1)
     end
     ode.odeC = A
     return A
 end
 
 function deleteC(ode::acb_ode)
-    if ode.odeC == Ptr{nothing}(0)
+    if ode.odeC == C_NULL
         return
     end
-    ccall((:acb_ode_clear,"libcascade"), Cvoid, (Ptr{nothing},), ode.odeC)
-    ode.odeC = Ptr{nothing}(0)
+    ccall((:acb_ode_clear,"libcascade"), Cvoid, (Ptr{Nothing},), ode.odeC)
+    ode.odeC = C_NULL
     return
 end
 
 function setInitialValues(ode::acb_ode,poly::acb_poly)
-    if ode.odeC == Ptr{nothing}(0)
+    if ode.odeC == C_NULL
         translateC(ode);
     end
-    ccall((:acb_set_initial,"libcascade"), Cvoid, (Ptr{nothing},acb_poly), ode.odeC, poly)
+    ccall((:acb_set_initial,"libcascade"), Cvoid, (Ptr{Nothing},acb_poly), ode.odeC, poly)
 end
 
 function powerSeries(ode::acb_ode,target::acb)
-    if ode.odeC == Ptr{nothing}(0)
+    if ode.odeC == C_NULL
         translateC(ode);
     end
     polyRing = ode.polys[1].parent
-    p =  ccall((:find_power_series_julia,"libcascade"),acb_poly,(Ptr{nothing},acb,Cint),ode.odeC,target,polyRing.base_ring.prec)
+    p =  ccall((:find_power_series_julia,"libcascade"),acb_poly,(Ptr{Nothing},acb,Cint),ode.odeC,target,polyRing.base_ring.prec)
     return polyRing(p)
 end
 
 function monodromy(ode::acb_ode,z0=0)
-    if ode.odeC == Ptr{nothing}(0)
+    if ode.odeC == C_NULL
         translateC(ode);
     end
     Ring = ode.polys[1].parent.base_ring
@@ -137,7 +137,7 @@ function monodromy(ode::acb_ode,z0=0)
     mono = S(1)
     M = Ref{acb_mat}(mono)
     Z = Ref{acb}(Ring(z0))
-    ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ref{acb_mat},Ptr{nothing},Ref{acb},Cint),M,ode.odeC,Z,Ring.prec)
+    ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ref{acb_mat},Ptr{Nothing},Ref{acb},Cint),M,ode.odeC,Z,Ring.prec)
     mono.base_ring = Ring
     deleteC(ode)
     return mono
@@ -145,7 +145,7 @@ end
 
 function acb_ode_legendre(R::AcbPolyRing,n::Integer)
     ode = acb_ode([R(n*(n+1)),R([0,-2]),R([1,0,-1])])
-    ode.odeC = ccall((:acb_ode_legendre,:libcascade),Ptr{nothing},(Cint,),n)
+    ode.odeC = ccall((:acb_ode_legendre,:libcascade),Ptr{Nothing},(Cint,),n)
     return ode
 end
 
@@ -153,7 +153,7 @@ function acb_ode_bessel(R::AcbPolyRing,nu::acb)
     p = R([0,0,1])
     ode = acb_ode([p-nu*nu,R([0,1]),R([0,0,1])])
     N = Ref{acb}(nu)
-    ode.odeC = ccall((:acb_ode_bessel,:libcascade),Ptr{nothing},(Ref{acb},Cint),N,R.base_ring.prec)
+    ode.odeC = ccall((:acb_ode_bessel,:libcascade),Ptr{Nothing},(Ref{acb},Cint),N,R.base_ring.prec)
     return ode
 end
 
@@ -162,7 +162,7 @@ function acb_ode_hypgeom(R::AcbPolyRing,a::acb,b::acb,c::acb)
     A = Ref{acb}(a)
     B = Ref{acb}(b)
     C = Ref{acb}(c)
-    ode.odeC = ccall((:acb_ode_hypgeom,:libcascade),Ptr{nothing},(Ref{acb},Ref{acb},Ref{acb},Cint),A,B,C,R.base_ring.prec)
+    ode.odeC = ccall((:acb_ode_hypgeom,:libcascade),Ptr{Nothing},(Ref{acb},Ref{acb},Ref{acb},Cint),A,B,C,R.base_ring.prec)
     return ode
 end
 
