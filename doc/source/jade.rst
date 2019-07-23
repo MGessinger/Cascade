@@ -1,10 +1,10 @@
 .. _Nemo: http://nemocas.org
 .. _Jade:
 
-**Jade** - the Julia interface to Arbitrary precision Differential Equations
+**Jade** - the Julia interface to Arbitrary Precision Differential Equations
 ====================================================================================
 
-Jade provides an interactive interface to Cascade, which can be used from julia's REPL. It uses Nemo_ to store variables of type :type:`acb` in julia, which will then be translated to a C-style struct whenever needed. All memory management will be performed automatically, but you can manually create or delete the C-struct if you need to.
+Jade provides an interactive interface to Cascade, which can be used from Julia's REPL. It uses Nemo_ to store variables of type :type:`acb` in Julia, which will then be translated to a C-style struct whenever needed. All memory management will be performed automatically, but you can manually create or delete the C-struct if you need to.
 
 In the following, all functions are listed with their full name. However most functions are exported from Jade and can therefore be called without the *Jade.*-prefix.
 

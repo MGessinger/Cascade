@@ -3,7 +3,7 @@
 **cascade.h** -- Solving complex differential equations
 ==================================================================================
 
-Cascade implements complex differential equations in a variable of type :type:`acb_ode_struct`. It provides functionality for finding power series solutions around the origin, but is also capable of performing analytic continuation along a piecewise linear path to find power series expansions anywhere in the complex plane - provided the solution is analytic in a small neighborhood of the origin.
+Cascade implements complex differential equations in a variable of type :type:`acb_ode_struct`. It provides functionality for finding power series solutions around the origin, but is also capable of performing analytic continuation along a piecewise linear path to find power series expansions anywhere in the complex plane - provided the solution is analytic in at least a small neighborhood of the origin.
 
 Special Equations
 ------------------
@@ -27,7 +27,7 @@ Special Equations
     Returns an `acb_ode_t` initialized to Euler's hypergeometric equation. The initial values are set in such a way that the series expansion yields the hypergeometric series 2F1. Euler's equation is given by:
 
     .. math::
-        z(1-z)y'' + (c - (a + b + 1)z)y' -aby = 0
+        z(1-z)y'' + (c - (a + b + 1)z)y' - aby = 0
 
 Functions
 ------------------
@@ -50,7 +50,7 @@ Functions
 
 .. function:: void radiusOfConvergence(arb_t rad, acb_ode_t ODE, slong bits)
 
-    Sets *rad* to the radius of a ball that is garantueed not to contain any singularities of *ODE* other than zero. If zero is not a singularity of ODE, *rad* is set to zero. This is computed using Rouché's theorem applied to the leading polynomial of *ODE*. If the leading polynomial of ODE is of the form z^r*p(z) with p not vanishing at zero, then *rad* is chosen in such a way that 
+    Sets *rad* to the radius of a ball that is garantueed not to contain any singularities of *ODE* other than zero. If zero is not a singularity of ODE, *rad* is set to zero. This is computed using Rouche's theorem applied to the leading polynomial of *ODE*. If the leading polynomial of ODE is of the form z^r*p(z) with p not vanishing at zero, then *rad* is chosen in such a way that 
     
     .. math:: |a_0| < \sum_{k=1}^{n} |a_k| rad^k
 
