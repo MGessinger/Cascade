@@ -2,6 +2,45 @@
 
 slong convergence_tolerance = 2;
 
+slong truncation_order (arb_t eta, arb_t alpha, slong bits)
+{
+    /* Compute the number of coefficients necessary to obtain a truncation precision of 2^-bits */
+    slong n = 0;
+    arb_t r;
+    arb_init(r);
+    /* Prepare r as a specific convex combination */
+    arb_mul_si(r,eta,801,bits);
+    arb_addmul_si(r,alpha,199,bits);
+    arb_div_si(r,r,1000,bits);
+    /* The value of r is uninteresting. Only the quotient eta/r is relevant. */
+    arb_div(r,eta,r,bits);
+
+    /* Compute the formula for n */
+    arb_t N, temp;
+    arb_init(N);
+    arb_init(temp);
+
+    arb_sub_si(temp,r,1,bits);
+    arb_neg(temp,temp);
+    arb_log(N,temp,bits);
+
+    arb_const_log2(temp,bits);
+    arb_submul_si(N,temp,bits,bits);
+
+    arb_log(temp,r,bits);
+    arb_div(N,N,temp,bits);
+
+    arb_printd(N,20);
+    arb_ceil(N,N,bits);
+    if (arb_get_unique_fmpz(&n,N) == 0)
+        n = convergence_tolerance*bits;
+
+    arb_clear(N);
+    arb_clear(temp);
+    arb_clear(r);
+    return n;
+}
+
 ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits)
 {
     /* Iteratively compute the summands of the power series solution near z=in (where z0 = 0).
@@ -42,10 +81,6 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits)
         for (slong oldIndex = newIndex+order(ODE)-1; oldIndex >= minIndex; oldIndex--)
         {
             acb_poly_get_coeff_acb(oldCoeff,ODE->solution,oldIndex);
-
-            /* Ignore zero terms immediately: */
-            if (acb_is_zero(oldCoeff))
-                continue;
 
             /* Check for proper convergence of the summands */
             acb_mul(temp,oldCoeff,power,bits);
@@ -105,6 +140,7 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits)
         acb_ode_dump(ODE,"odedump.txt");
     else
         acb_poly_truncate(ODE->solution,order(ODE)+newIndex+1);
+        /* In case there were left-overs from a previous calculation */
 
     mag_clear(ubound);
     acb_clear(newCoeff); acb_clear(oldCoeff);
