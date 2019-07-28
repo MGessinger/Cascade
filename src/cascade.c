@@ -63,7 +63,6 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
         arb_indeterminate(eta);
     slong num_of_coeffs = truncation_order(eta,rad,bits);
     arb_clear(eta);
-    flint_printf("%w coeffs are necessary.\n",num_of_coeffs);
     if (num_of_coeffs <= 0)
         return 0;
 
@@ -273,15 +272,6 @@ void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong bits)
     {
         arb_indeterminate(radOfConv);
         return;
-    }
-    if (!acb_contains_zero(diff_eq_coeff(ODE,order(ODE),0)))
-    {
-        flint_printf("The point z0 = 0 is not singular. Do you really want to compute the monodromy? (y/n)\n");
-        if (getchar() != 'y')
-        {
-            arb_zero(radOfConv);
-            return;
-        }
     }
     /* A new polynomial whose coefficients are the moduli of the original coeffs */
     arb_poly_t realPol;
