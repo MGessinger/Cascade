@@ -49,6 +49,10 @@ acb_poly_struct find_power_series_julia(acb_ode_t ODE, acb_struct in, slong bits
         flint_printf("No initial values have been specified. Please run setInitalValues first.\n");
         return ODE->solution[0];
     }
-    find_power_series(ODE, &in, bits);
+    arb_t rad;
+    arb_init(rad);
+    radiusOfConvergence(rad,ODE,bits);
+    find_power_series(ODE, &in, rad, bits);
+    arb_clear(rad);
     return ODE->solution[0];
 }

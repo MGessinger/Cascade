@@ -5,6 +5,10 @@ slong convergence_tolerance = 2;
 slong truncation_order (arb_t eta, arb_t alpha, slong bits)
 {
     /* Compute the number of coefficients necessary to obtain a truncation precision of 2^-bits */
+    if (!arb_is_finite(eta) || !arb_is_finite(alpha))
+        return convergence_tolerance*bits;
+    if (!arb_lt(eta,alpha))
+        return 0;
     slong n = 0;
     arb_t r;
     arb_init(r);
@@ -30,7 +34,6 @@ slong truncation_order (arb_t eta, arb_t alpha, slong bits)
     arb_log(temp,r,bits);
     arb_div(N,N,temp,bits);
 
-    arb_printd(N,20);
     arb_ceil(N,N,bits);
     if (arb_get_unique_fmpz(&n,N) == 0)
         n = convergence_tolerance*bits;
@@ -41,23 +44,36 @@ slong truncation_order (arb_t eta, arb_t alpha, slong bits)
     return n;
 }
 
-ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits)
+ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
 {
     /* Iteratively compute the summands of the power series solution near z=in (where z0 = 0).
-     * Only converges when z0=0 is an ordinary point and and B(0,|in|) contains no singularities.
-     * This is not tested here! */
+     * Only converges when z0=0 is an ordinary point and and B(0,|in|) contains no singularities. */
     if (ODE == NULL)
         return 0;
     if (acb_poly_is_zero(ODE->solution))
         return 1;
+
+    /* First bound the number of coefficientes that are computed.
+     * This assures a proper enclosure on the one hand as well as a terminating do-while-loop on the other. */
+    arb_t eta;
+    arb_init(eta);
+    if (in != NULL)
+        acb_abs(eta,in,bits);
+    else
+        arb_indeterminate(eta);
+    slong num_of_coeffs = truncation_order(eta,rad,bits);
+    arb_clear(eta);
+    flint_printf("%w coeffs are necessary.\n",num_of_coeffs);
+    if (num_of_coeffs <= 0)
+        return 0;
+
+    /* Only now does it make sense to initialise variables */
     acb_t temp; acb_init(temp);
     acb_t newCoeff; acb_init(newCoeff); /* Stores the latest coefficient which is being computed */
     acb_t oldCoeff; acb_init(oldCoeff); /* Stores the old coefficient which is looped over */
-    acb_t power;    acb_init(power);    /* Stores the current power of in */
-    mag_t ubound;   mag_init(ubound);   /* Stores an upper bound for each old coefficient */
-    acb_one(power);
+    mag_t ubound;   mag_init(ubound);   /* Stores an upper bound for the new coefficient */
 
-    slong num_of_nonzero;
+    /* Now compute the recursion */
     slong realError = 0, imagError = 0;
     slong minIndex, maxPoly, newIndex = 0;
     for (int oldIndex = 0; oldIndex < order(ODE); oldIndex++)
@@ -74,21 +90,14 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits)
             imagError = convergence_tolerance*bits;
     }
     do {
-        num_of_nonzero = 0;
         acb_zero(newCoeff);
         minIndex = (newIndex > degree(ODE)) ? newIndex - degree(ODE) : 0;
 
         for (slong oldIndex = newIndex+order(ODE)-1; oldIndex >= minIndex; oldIndex--)
         {
             acb_poly_get_coeff_acb(oldCoeff,ODE->solution,oldIndex);
-
-            /* Check for proper convergence of the summands */
-            acb_mul(temp,oldCoeff,power,bits);
-            acb_get_mag(ubound,temp);
-            if (mag_cmp_2exp_si(ubound,-bits) >= 0)
-                num_of_nonzero++;
             acb_zero(temp);
-
+            
             /* Loop through the polynomials */
             maxPoly = order(ODE);
             /* No more than degree(ODE) terms can contribute: */
@@ -125,26 +134,14 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, slong bits)
             break;
         }
         acb_poly_set_coeff_acb(ODE->solution,newIndex+order(ODE),newCoeff);
-        if (in != NULL)
-            acb_mul(power,power,in,bits);
+    } while (++newIndex <= num_of_coeffs);
 
-        if (++newIndex >= convergence_tolerance*bits)
-        {
-            flint_printf("%w summands have been computed and no convergence was achieved. Aborting.\n",newIndex);
-            flint_printf("Target was %w bits.\n",bits);
-            newIndex = NON_CONVERGENT;
-            break;
-        }
-    } while (num_of_nonzero != 0);
-    if (newIndex == NON_CONVERGENT)
-        acb_ode_dump(ODE,"odedump.txt");
-    else
-        acb_poly_truncate(ODE->solution,order(ODE)+newIndex+1);
-        /* In case there were left-overs from a previous calculation */
+    acb_poly_truncate(ODE->solution,order(ODE)+newIndex+1);
+    /* In case there were left-overs from a previous calculation */
 
     mag_clear(ubound);
     acb_clear(newCoeff); acb_clear(oldCoeff);
-    acb_clear(power); acb_clear(temp);
+    acb_clear(temp);
     return newIndex;
 }
 
@@ -189,6 +186,7 @@ void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len
 {
     /* Evaluate a solution along the given piecewise linear path */
     acb_t a; acb_init(a);
+    arb_t rad; arb_init(rad);
     acb_set(a,path);
 
     slong time = 0;
@@ -196,7 +194,8 @@ void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len
     {
         acb_ode_shift(ODE,a,bits);
         acb_sub(a,path+time+1,path+time,bits);
-        if (find_power_series(ODE,a,bits) == 0)
+        acb_abs(rad,path+time,bits);
+        if (find_power_series(ODE,a,rad,bits) == 0)
         {
             flint_printf("The power series expansion did not converge from ");
             acb_printd(path+time,10);

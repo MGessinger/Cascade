@@ -9,7 +9,7 @@
 #define TRUE 1
 
 /* Compute (and double check) a power series solution to ODE */
-ulong find_power_series (acb_ode_t ODE, acb_t in, slong bits);
+ulong find_power_series (acb_ode_t ODE, acb_t in, arb_t rad, slong bits);
 int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits);
 
 slong truncation_order (arb_t eta, arb_t alpha, slong bits);
