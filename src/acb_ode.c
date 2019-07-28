@@ -84,6 +84,8 @@ acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in)
 acb_ode_t acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits)
 {
     /* Read an ODE from a file */
+    if (!numberOfPols)
+        return NULL;
     if (maxOrder == 0)
         maxOrder = UWORD_MAX;
     FILE *input = fopen(fileName,"r");
@@ -132,6 +134,9 @@ acb_ode_t acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOrde
 
 void acb_ode_dump(acb_ode_t ODE, char *file)
 {
+    /* Dumps the ODE to file. If file is NULL, dump to stdout */
+    if (ODE == NULL)
+        return;
     FILE *out = stdout;
     if (file != NULL)
         out = fopen(file,"w");
@@ -160,6 +165,9 @@ void acb_ode_dump(acb_ode_t ODE, char *file)
 
 void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits)
 {
+    /* Shifts the origin to a */
+    if (ODE == NULL)
+        return;
     if (acb_is_zero(a))
         return;
     if (degree(ODE) < 1)
