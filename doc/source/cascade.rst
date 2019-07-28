@@ -32,13 +32,13 @@ Special Equations
 Functions
 ------------------
 
-.. function:: ulong find_power_series (acb_ode_t ODE, acb_t in, slong bits)
+.. function:: ulong find_power_series (acb_ode_t ODE, acb_t z, arb_t rad, slong bits)
 
-    Finds a solution to *ODE*, by recursively computing the coefficients of the power series expansion. The iteration stops when the summands, given by *a_k\*in^k*, are small enough.  This function does not perform any tests for convergence beforehnd, but it aborts if too many coefficients are computed.
+    Finds a solution to *ODE*, by recursively computing the coefficients of the power series expansion. *z* stores the distance from the origin within which a precision of *bits* should be achieved. *rad* contains a lower bound for the radius of convergence. This could (and in general should) be obtained by calling :func:`radiusOfConvergence`.
 
 .. function:: void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len, slong prec, int output_series)
 
-    Perform analytic continuation along *path*, which stores the *len* cornes of a piecewise linear path in the complex plane. This is implemented by computing a power series expansion at each corner and then transforming the origin. The data stored inside *ODE* remains unchanged.
+    Perform analytic continuation along *path*, which stores the *len* cornes of a piecewise linear path in the complex plane. This is implemented by computing a power series expansion at each corner and then transforming the origin. The data stored inside *ODE* remains unchanged. If *output_series* is set, then *res* is assumed to point to an array and the first *order(ODE)* coefficients of the power series are copied to *res*.
 
 .. function:: void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong bits)
 
@@ -46,7 +46,7 @@ Functions
 
 .. function:: int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits)
 
-    Plugs the solution stored in *ODE* into the actual equation and checks if the result actually vanishes. If not, *ODE* is dumped by `acb_ode_dump`.
+    Plugs the solution stored in *ODE* into the actual equation and checks if the result actually vanishes. If not, *ODE* is dumped by :func:`acb_ode_dump`.
 
 .. function:: void radiusOfConvergence(arb_t rad, acb_ode_t ODE, slong bits)
 
