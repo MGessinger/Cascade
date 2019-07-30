@@ -70,8 +70,8 @@ Input and Output
 
     Reads a differential equation from the provided file. The formatting for the *n-th* summand is *yn\*(a0,a1,a2,...)* where *a0* are complex numbers in the form *an = x +yj* (notice the space before the *+*). Example:
 
-.. math::
-    y2*(1,2,1) + y0*(1 +3j)
+	.. math::
+	    y2*(1,2,1) + y0*(1 +3j)
 
 .. function:: void acb_ode_dump (acb_ode_t ODE, char* file)
 
