@@ -74,7 +74,7 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
 
     /* Now compute the recursion */
     slong realError = 0, imagError = 0;
-    slong minIndex, maxPoly, newIndex = 0;
+    slong minIndex, polyIndex, newIndex = 0;
     for (int oldIndex = 0; oldIndex < order(ODE); oldIndex++)
     {
         acb_poly_get_coeff_acb(oldCoeff,ODE->solution,oldIndex);
@@ -98,13 +98,13 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
             acb_zero(temp);
             
             /* Loop through the polynomials */
-            maxPoly = order(ODE);
+            polyIndex = order(ODE);
             /* No more than degree(ODE) terms can contribute: */
-            if (maxPoly > degree(ODE) + oldIndex - newIndex)
-                maxPoly = degree(ODE) + oldIndex - newIndex;
-            if (maxPoly > oldIndex)
-                maxPoly = oldIndex;
-            for (slong polyIndex = maxPoly; polyIndex >= 0; polyIndex--)
+            if (polyIndex > degree(ODE) + oldIndex - newIndex)
+                polyIndex = degree(ODE) + oldIndex - newIndex;
+            if (polyIndex > oldIndex)
+                polyIndex = oldIndex;
+            for (; polyIndex >= 0; polyIndex--)
             {
                 if (polyIndex + newIndex - oldIndex >= 0)
                     acb_add(temp,temp,diff_eq_coeff(ODE,polyIndex,polyIndex+newIndex-oldIndex),bits);
@@ -115,10 +115,9 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
             acb_addmul(newCoeff,oldCoeff,temp,bits);
         }
         /* Divide by the coefficient of a_b where b = newIndex + order(ODE) */
-        acb_set_ui(temp,newIndex+1);
-        acb_rising_ui(temp,temp,order(ODE),bits);
-        acb_mul(temp,temp,diff_eq_coeff(ODE,order(ODE),0),bits);
-        acb_neg(temp,temp);
+        fmpz_rfac_uiui(&minIndex,newIndex+1,order(ODE)); /* Notice that minIndex is no longer needed at this point
+                                                            and can therefore act as a temporary variable */
+        acb_mul_si(temp,diff_eq_coeff(ODE,order(ODE),0),-1*minIndex,bits);
         acb_div(newCoeff,newCoeff,temp,bits);
 
         arb_get_mag(ubound,acb_realref(newCoeff));
@@ -126,6 +125,8 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
         arb_get_mag(ubound,acb_imagref(newCoeff));
         mag_mul_2exp_si(arb_radref(acb_imagref(newCoeff)),ubound,-imagError);
 
+        if (acb_is_zero(newCoeff))
+            continue;
         if (!acb_is_finite(newCoeff))
         {
             flint_printf("A coefficient was evaluated to be NaN. Aborting.\n");
@@ -133,10 +134,11 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
             break;
         }
         acb_poly_set_coeff_acb(ODE->solution,newIndex+order(ODE),newCoeff);
-    } while (++newIndex <= num_of_coeffs);
-
-    acb_poly_truncate(ODE->solution,order(ODE)+newIndex+1);
-    /* In case there were left-overs from a previous calculation */
+    } while (++newIndex < num_of_coeffs);
+    if (newIndex == NON_CONVERGENT)
+        acb_ode_dump(ODE,"odedump.txt");
+    else
+        acb_poly_truncate(ODE->solution,order(ODE)+newIndex+1);
 
     mag_clear(ubound);
     acb_clear(newCoeff); acb_clear(oldCoeff);
