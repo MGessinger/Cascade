@@ -94,9 +94,6 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
 
         for (slong oldIndex = newIndex+order(ODE)-1; oldIndex >= minIndex; oldIndex--)
         {
-            acb_poly_get_coeff_acb(oldCoeff,ODE->solution,oldIndex);
-            acb_zero(temp);
-            
             /* Loop through the polynomials */
             polyIndex = order(ODE);
             /* No more than degree(ODE) terms can contribute: */
@@ -104,13 +101,15 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
                 polyIndex = degree(ODE) + oldIndex - newIndex;
             if (polyIndex > oldIndex)
                 polyIndex = oldIndex;
-            for (; polyIndex >= 0; polyIndex--)
-            {
-                if (polyIndex + newIndex - oldIndex >= 0)
-                    acb_add(temp,temp,diff_eq_coeff(ODE,polyIndex,polyIndex+newIndex-oldIndex),bits);
 
-                if (polyIndex != 0)
-                    acb_mul_si(temp,temp,oldIndex - polyIndex + 1,bits);
+            acb_poly_get_coeff_acb(oldCoeff,ODE->solution,oldIndex);
+            acb_set(temp,diff_eq_coeff(ODE,polyIndex,polyIndex+newIndex-oldIndex));
+            for (polyIndex--; polyIndex >= 0; polyIndex--)
+            {
+                acb_mul_si(temp,temp,oldIndex - polyIndex,bits);
+                if (polyIndex + newIndex - oldIndex < 0)
+                    continue;
+                acb_add(temp,temp,diff_eq_coeff(ODE,polyIndex,polyIndex+newIndex-oldIndex),bits);
             }
             acb_addmul(newCoeff,oldCoeff,temp,bits);
         }
@@ -313,7 +312,7 @@ void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong bits)
             arb_sub(radOfConv,radOfConv,val,bits);
         it++;
     } while (it < bits);
-    /* If radOfConv is nonpositive, somthing went horribly wrong! */
+    /* If radOfConv is nonpositive, something went horribly wrong! */
     if (arb_is_nonpositive(radOfConv))
         arb_indeterminate(radOfConv);
 
