@@ -50,9 +50,9 @@ Functions
 
 .. function:: void radiusOfConvergence(arb_t rad, acb_ode_t ODE, slong bits)
 
-    Sets *rad* to the radius of a ball that is garantueed not to contain any singularities of *ODE* other than (possibly) zero. This is computed by iterative application of the bound
+    Sets *rad* to the radius of a ball that is garantueed not to contain any singularities of *ODE* other than (possibly) zero. This is computed by bounding the inverse roots using Fujiwara's bound:
 
     .. math::
-        R < \frac{1}{2} min\{\left| \frac{a_0}{a_k} \right| ^{1/k} \mid a_k \neq 0 \}.
-
-    applied to the Greaffe-transform of the leading polynomial of *ODE*.
+        f(1/z) = 0 \iff \left| z \left| > \frac{1}{2} min\{\left| \frac{a_k}{a_0} \right| ^{1/k} \mid a_k \neq 0 \}.
+    
+    The inverse of this bound then yields a lower bound on the distance to the nearest root od *ODE*.

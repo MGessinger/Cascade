@@ -231,21 +231,21 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
     }
     slong steps = 32;
     acb_ptr path = _acb_vec_init(steps+1);
-    acb_t radOfConv;
-    acb_init(radOfConv);
+    arb_t radOfConv;
+    arb_init(radOfConv);
     /* Move to the given singularity */
     if (z0 != NULL && acb_is_finite(z0))
         acb_ode_shift(ODE,z0,bits);
 
     /* Choose a path for the analytic continuation */
-    radiusOfConvergence(acb_realref(radOfConv),ODE,bits);
-    if (acb_is_zero(radOfConv))
+    radiusOfConvergence(radOfConv,ODE,bits);
+    if (arb_is_zero(radOfConv) || !arb_is_finite(radOfConv))
         return;
-    acb_div_si(radOfConv,radOfConv,convergence_tolerance,bits);
+    arb_div_si(radOfConv,radOfConv,2,bits);
 
     _acb_vec_unit_roots(path, steps, steps, bits);
     acb_one(path+steps);
-    _acb_vec_scalar_mul(path,path,steps+1,radOfConv,bits);
+    _acb_vec_scalar_mul_arb(path,path,steps+1,radOfConv,bits);
 
     /* Compute the function along the chosen path */
     for (slong i = 0; i < order(ODE); i++)
@@ -262,7 +262,7 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
         acb_ode_shift(ODE,z0,bits);
         acb_neg(z0,z0);
     }
-    acb_clear(radOfConv);
+    arb_clear(radOfConv);
     _acb_vec_clear(path,steps+1);
     return;
 }
@@ -293,44 +293,36 @@ void graeffe_transform(acb_ptr dest, acb_srcptr src, slong len, slong bits)
 
 void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong bits)
 {
-    /* Find the radius of cervegence of the power series expansion */
+    /* Find the radius of convergence of the power series expansion */
+    slong counter = 1, deg = 0;
     if (ODE == NULL)
     {
         arb_indeterminate(radOfConv);
         return;
     }
-    slong valuation = 0;
-    arb_pos_inf(radOfConv);
-    arb_t R;
-    arb_init(R);
     acb_ptr P = _acb_vec_init(degree(ODE)+1);
-    arb_ptr Q = _arb_vec_init(degree(ODE)+1);
     _acb_vec_set(P,diff_eq_poly(ODE,order(ODE)),degree(ODE)+1);
-    while (acb_contains_zero(diff_eq_coeff(ODE,order(ODE),valuation)))
-        valuation++;
-    _acb_poly_shift_right(P,P,degree(ODE)+1,valuation);
-    slong it = 1; /* A counter to avoid infinite loops */
-    while (it <= 1048576)
+    deg = degree(ODE);
+    for (slong i = 0; i < deg/2; i++)
+        acb_swap(P+i,P+deg-i);
+    while (acb_contains_zero(P+deg))
+        deg--;
+    for (slong i = 0; i <= deg; i++)
     {
-        _acb_poly_majorant(Q,P,degree(ODE)+1,bits);
-        for (slong i = 0; i <= degree(ODE); i++)
-        {
-            if (arb_is_zero(Q+i))
-                continue;
-            arb_div(R,Q,Q+i,bits);
-            arb_root_ui(R,R,i,bits);
-            if (arb_lt(R,radOfConv))
-                arb_set(radOfConv,R);
-        }
-        arb_div_ui(radOfConv,radOfConv,2,bits);
-        arb_root_ui(radOfConv,radOfConv,it,bits);
-        graeffe_transform(P,P,degree(ODE)+1,bits);
-        it*=2;
+        acb_printd(P+i,20);
+        flint_printf("\n");
     }
+    while (counter <= 1048576)
+    {
+        _acb_poly_root_bound_fujiwara(arb_radref(radOfConv),P,deg+1);
+        arb_get_rad_arb(radOfConv,radOfConv);
+        graeffe_transform(P,P,deg+1,bits);
+        counter *= 2;
+    }
+    arb_inv(radOfConv,radOfConv,bits);
+    arb_root_ui(radOfConv,radOfConv,counter/2,bits);
     arb_printd(radOfConv,20);
     flint_printf("\n");
-    arb_clear(R);
-    _arb_vec_clear(Q,degree(ODE)+1);
     _acb_vec_clear(P,degree(ODE)+1);
     return;
 }
