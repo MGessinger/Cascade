@@ -234,7 +234,7 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
     acb_t radOfConv;
     acb_init(radOfConv);
     /* Move to the given singularity */
-    if (acb_is_finite(z0))
+    if (z0 != NULL && acb_is_finite(z0))
         acb_ode_shift(ODE,z0,bits);
 
     /* Choose a path for the analytic continuation */
@@ -255,14 +255,39 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
         analytic_continuation(acb_mat_entry(monodromy,i,0),ODE,path,steps+1,bits,TRUE);
     }
     acb_mat_transpose(monodromy,monodromy);
-    acb_clear(radOfConv);
-    _acb_vec_clear(path,steps+1);
     /* Move back to the start */
-    if (acb_is_finite(z0))
+    if (z0 != NULL && acb_is_finite(z0))
     {
         acb_neg(z0,z0);
         acb_ode_shift(ODE,z0,bits);
+        acb_neg(z0,z0);
     }
+    acb_clear(radOfConv);
+    _acb_vec_clear(path,steps+1);
+    return;
+}
+
+void graeffe_transform(acb_ptr dest, acb_srcptr src, slong len, slong bits)
+{
+    /* Computes the Graeffe transform of src. In- and output can be aliased. */
+    slong q = (len-1)/2;
+    acb_ptr pe = _acb_vec_init(q+1);
+    acb_ptr po = _acb_vec_init(len);
+    for (slong i = 0; i < len; i++)
+    {
+        if (i%2 == 0)
+            acb_set(pe+(i/2),src+i);
+        else
+            acb_set(po+(i/2),src+i);
+    }
+    _acb_poly_mul(dest,po,q+1,po,q+1,bits);
+    _acb_poly_shift_left(dest,dest,len-1,1);
+    _acb_vec_neg(dest,dest,len);
+    _acb_poly_mul(po,pe,q+1,pe,q+1,bits);
+    _acb_vec_add(dest,dest,po,len,bits);
+
+    _acb_vec_clear(pe,q+1);
+    _acb_vec_clear(po,len);
     return;
 }
 
@@ -274,51 +299,38 @@ void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong bits)
         arb_indeterminate(radOfConv);
         return;
     }
-    /* A new polynomial whose coefficients are the moduli of the original coeffs */
-    arb_poly_t realPol;
-    arb_poly_init(realPol);
-    /* Stores the value and the derivative of realPol: */
-    arb_t val, der;
-    arb_init(val);
-    arb_init(der);
-    /* A counter to prevent infinite loops */
-    slong it = 0;
-
-    /* Store the vector in ODE back into a polynomial and divide out the root(s) at zero */
-    arb_zero(radOfConv);
-    for (slong i = 0; i <= degree(ODE); i++)
+    slong valuation = 0;
+    arb_pos_inf(radOfConv);
+    arb_t R;
+    arb_init(R);
+    acb_ptr P = _acb_vec_init(degree(ODE)+1);
+    arb_ptr Q = _arb_vec_init(degree(ODE)+1);
+    _acb_vec_set(P,diff_eq_poly(ODE,order(ODE)),degree(ODE)+1);
+    while (acb_contains_zero(diff_eq_coeff(ODE,order(ODE),valuation)))
+        valuation++;
+    _acb_poly_shift_right(P,P,degree(ODE)+1,valuation);
+    slong it = 1; /* A counter to avoid infinite loops */
+    while (it <= 1048576)
     {
-        if (acb_contains_zero(diff_eq_coeff(ODE,order(ODE),i)))
-            arb_zero(radOfConv);
-        else
-            acb_get_abs_ubound_arf(arb_midref(radOfConv),diff_eq_coeff(ODE,order(ODE),i),bits);
-        arb_poly_set_coeff_arb(realPol,i,radOfConv);
+        _acb_poly_majorant(Q,P,degree(ODE)+1,bits);
+        for (slong i = 0; i <= degree(ODE); i++)
+        {
+            if (arb_is_zero(Q+i))
+                continue;
+            arb_div(R,Q,Q+i,bits);
+            arb_root_ui(R,R,i,bits);
+            if (arb_lt(R,radOfConv))
+                arb_set(radOfConv,R);
+        }
+        arb_div_ui(radOfConv,radOfConv,2,bits);
+        arb_root_ui(radOfConv,radOfConv,it,bits);
+        graeffe_transform(P,P,degree(ODE)+1,bits);
+        it*=2;
     }
-    arb_poly_shift_right(realPol,realPol,arb_poly_valuation(realPol));
-    arb_neg(acb_poly_get_coeff_ptr(realPol,0),acb_poly_get_coeff_ptr(realPol,0));
-    arb_one(radOfConv);
-
-    /* Find any root less than one through Euler's method */
-    do
-    {
-        arb_poly_evaluate2(val,der,realPol,radOfConv,bits);
-        if (arb_is_negative(val))
-            break;
-        /* If the polynomial is not negative yet, perform one Euler step */
-        arb_div(val,val,der,bits);
-        if (arb_contains_negative(val))
-            arb_div_ui(radOfConv,radOfConv,2,bits);
-        else
-            arb_sub(radOfConv,radOfConv,val,bits);
-        it++;
-    } while (it < bits);
-    /* If radOfConv is nonpositive, something went horribly wrong! */
-    if (arb_is_nonpositive(radOfConv))
-        arb_indeterminate(radOfConv);
-
-    mag_zero(arb_radref(radOfConv));
-    arb_clear(val);
-    arb_clear(der);
-    arb_poly_clear(realPol);
+    arb_printd(radOfConv,20);
+    flint_printf("\n");
+    arb_clear(R);
+    _arb_vec_clear(Q,degree(ODE)+1);
+    _acb_vec_clear(P,degree(ODE)+1);
     return;
 }
