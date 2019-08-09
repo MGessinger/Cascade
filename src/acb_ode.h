@@ -5,9 +5,7 @@
 #include <acb_poly.h>
 
 #define INVALID_DATA (-1)
-#define NON_CONVERGENT (0)
-#define SINGULAR (1)
-#define ORDINARY (2)
+#define ORDINARY (1)
 
 #define degree(ODE) ((ODE)->degree)
 #define order(ODE) ((ODE)->order)

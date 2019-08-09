@@ -220,18 +220,17 @@ short interpret (acb_poly_t *polys, acb_ode_t ODE)
     slong polyMaxDeg = 0, ord = order(ODE);
     while (polys[ord] == NULL || acb_poly_is_zero(polys[ord]))
         ord--;
+    if (ord <= 0)
+        return INVALID_DATA;
     for (slong i = 0; i <= ord; i++)
     {
+        if (polys[i] == NULL)
+            continue;
         if (polyMaxDeg < acb_poly_degree(polys[i]))
             polyMaxDeg = acb_poly_degree(polys[i]);
     }
     order(ODE) = ord;
     degree(ODE) = polyMaxDeg;
-    if (ord <= 0 || polyMaxDeg <= 0)
-    {
-        flint_printf("The order of the differential equation has to be positive.\n");
-        return INVALID_DATA;
-    }
     return ORDINARY;
 }
 
