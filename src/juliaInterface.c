@@ -51,7 +51,7 @@ acb_poly_struct find_power_series_julia(acb_ode_t ODE, acb_struct in, slong bits
     }
     arb_t rad;
     arb_init(rad);
-    radiusOfConvergence(rad,ODE,bits);
+    radiusOfConvergence(rad,ODE,20,bits);
     find_power_series(ODE, &in, rad, bits);
     arb_clear(rad);
     return ODE->solution[0];

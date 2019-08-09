@@ -1,12 +1,10 @@
 #include "cascade.h"
 
-slong convergence_tolerance = 2;
-
 slong truncation_order (arb_t eta, arb_t alpha, slong bits)
 {
     /* Compute the number of coefficients necessary to obtain a truncation precision of 2^-bits */
     if (!arb_is_finite(eta) || !arb_is_finite(alpha))
-        return convergence_tolerance*bits;
+        return 2*bits;
     if (!arb_lt(eta,alpha))
         return 0;
     slong n = 0;
@@ -35,8 +33,7 @@ slong truncation_order (arb_t eta, arb_t alpha, slong bits)
     arb_div(N,N,temp,bits);
 
     arb_ceil(N,N,bits);
-    if (arb_get_unique_fmpz(&n,N) == 0)
-        n = convergence_tolerance*bits;
+    arb_get_unique_fmpz(&n,N);
 
     arb_clear(N);
     arb_clear(temp);
@@ -122,12 +119,12 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
         if (!acb_is_finite(newCoeff))
         {
             flint_printf("A coefficient was evaluated to be NaN. Aborting.\n");
-            newIndex = NON_CONVERGENT;
+            newIndex = 0;
             break;
         }
         acb_poly_set_coeff_acb(ODE->solution,newIndex+order(ODE),newCoeff);
     }
-    if (newIndex == NON_CONVERGENT)
+    if (newIndex == 0)
         acb_ode_dump(ODE,"odedump.txt");
     else
         acb_poly_truncate(ODE->solution,order(ODE)+newIndex+1);
@@ -231,10 +228,11 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
         acb_ode_shift(ODE,z0,bits);
 
     /* Choose a path for the analytic continuation */
-    radiusOfConvergence(radOfConv,ODE,bits);
-    if (arb_is_zero(radOfConv) || !arb_is_finite(radOfConv))
+    radiusOfConvergence(radOfConv,ODE,20,bits);
+    if (arb_is_zero(radOfConv))
         return;
     arb_div_si(radOfConv,radOfConv,2,bits);
+    arb_get_mid_arb(radOfConv,radOfConv);
 
     _acb_vec_unit_roots(path, steps, steps, bits);
     acb_one(path+steps);
@@ -284,13 +282,15 @@ void graeffe_transform(acb_ptr dest, acb_srcptr src, slong len, slong bits)
     return;
 }
 
-void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong bits)
+void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong n, slong bits)
 {
+    if (n > bits)
+        return;
     /* Find the radius of convergence of the power series expansion */
-    slong counter = 1, deg = 0;
+    slong counter = 0, deg = 0;
     if (ODE == NULL)
     {
-        arb_indeterminate(radOfConv);
+        arb_zero(radOfConv);
         return;
     }
     acb_ptr P = _acb_vec_init(degree(ODE)+1);
@@ -300,15 +300,33 @@ void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong bits)
         acb_swap(P+i,P+deg-i);
     while (acb_contains_zero(P+deg))
         deg--;
-    while (counter <= 1048576)
+    if (deg == 0)
     {
-        _acb_poly_root_bound_fujiwara(arb_radref(radOfConv),P,deg+1);
-        arb_get_rad_arb(radOfConv,radOfConv);
-        graeffe_transform(P,P,deg+1,bits);
-        counter *= 2;
+        /* There are no singularities (outside zero, possibly) */
+        arb_one(radOfConv);
+        _acb_vec_clear(P,degree(ODE)+1);
+        return;
     }
+    while (counter < n)
+    {
+        graeffe_transform(P,P,deg+1,bits);
+        counter++;
+    }
+    _acb_poly_root_bound_fujiwara(arb_radref(radOfConv),P,deg+1);
+    arb_get_rad_arb(radOfConv,radOfConv);
     arb_inv(radOfConv,radOfConv,bits);
-    arb_root_ui(radOfConv,radOfConv,counter/2,bits);
+    counter = 1;
+    fmpz_mul_2exp(&counter,&counter,n);
+    arb_root_ui(radOfConv,radOfConv,counter,bits);
+    /* Error bound */
+    arb_t radius;
+    arb_init(radius);
+    arb_set_si(radius,2*deg);
+    arb_root_ui(radius,radius,counter,bits);
+    arb_sub_si(radius,radius,1,bits);
+    arb_mul(radius,radOfConv,radius,bits);
+    arb_add_error(radOfConv,radius);
+    arb_clear(radius);
     _acb_vec_clear(P,degree(ODE)+1);
     return;
 }
