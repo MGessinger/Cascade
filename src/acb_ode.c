@@ -81,11 +81,9 @@ acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in)
 
 /* I/O */
 
-acb_ode_t acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits)
+acb_ode_t acb_ode_fread(const char *fileName, ulong maxOrder, slong bits)
 {
     /* Read an ODE from a file */
-    if (!numberOfPols)
-        return NULL;
     if (maxOrder == 0)
         maxOrder = UWORD_MAX;
     FILE *input = fopen(fileName,"r");
@@ -97,13 +95,14 @@ acb_ode_t acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOrde
     char poly[512];
     long unsigned derivative = 0;
     int length = 0;
+    ulong numberOfPols;
     if (fscanf(input,"%*c%lu*(",&derivative) == 0)
     {
         flint_printf("The file format is wrong. Please make sure to declare the degree of derivation first.\n");
         fclose(input);
         return NULL;
     }
-    *numberOfPols = derivative;
+    numberOfPols = derivative;
     if (derivative > maxOrder)
     {
         flint_printf("The order of the ODE was larger than allowed. Aborted.\n");
@@ -117,15 +116,15 @@ acb_ode_t acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOrde
         fclose(input);
         return NULL;
     }
-    for (ulong i = 0; i <= *numberOfPols; i++)
+    for (ulong i = 0; i <= numberOfPols; i++)
         acb_poly_init(polys[i]);
     do {
         if (fscanf(input,"%[^)*]%n",poly,&length) != 0)
             parsePoly(polys[derivative],poly,length,bits);
     } while (fscanf(input,"%*[^a-z]%*c%lu*(",&derivative) != EOF);
     fclose(input);
-    acb_ode_t ODE =  acb_ode_init(polys,NULL,*numberOfPols);
-    for (ulong i = 0; i <= *numberOfPols; i++)
+    acb_ode_t ODE =  acb_ode_init(polys,NULL,numberOfPols);
+    for (ulong i = 0; i <= numberOfPols; i++)
         acb_poly_clear(polys[i]);
     flint_free(polys);
     flint_cleanup();

@@ -31,7 +31,7 @@ acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in);
 
 /* I/O */
 
-acb_ode_t acb_ode_fread(ulong *numberOfPols, const char *fileName, ulong maxOrder, slong bits);
+acb_ode_t acb_ode_fread(const char *fileName, ulong maxOrder, slong bits);
 
 void acb_ode_dump(acb_ode_t ODE, char *file);
 
