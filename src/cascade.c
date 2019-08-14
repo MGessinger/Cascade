@@ -284,15 +284,13 @@ void graeffe_transform(acb_ptr dest, acb_srcptr src, slong len, slong bits)
 
 void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong n, slong bits)
 {
-    if (n > bits)
-        return;
     /* Find the radius of convergence of the power series expansion */
-    slong counter = 0, deg = 0;
     if (ODE == NULL)
     {
         arb_zero(radOfConv);
         return;
     }
+    slong deg = 0;
     acb_ptr P = _acb_vec_init(degree(ODE)+1);
     _acb_vec_set(P,diff_eq_poly(ODE,order(ODE)),degree(ODE)+1);
     deg = degree(ODE);
@@ -303,30 +301,37 @@ void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong n, slong bits)
     if (deg == 0)
     {
         /* There are no singularities (outside zero, possibly) */
-        arb_one(radOfConv);
+        arb_indeterminate(radOfConv);
         _acb_vec_clear(P,degree(ODE)+1);
         return;
     }
-    while (counter < n)
-    {
+
+    /* Graeffe Transform */
+    for (slong counter = 0; counter < n; counter++)
         graeffe_transform(P,P,deg+1,bits);
-        counter++;
-    }
+
+    /* Evaluation */
+    fmpq_t root;
+    fmpq_init(root);
+    fmpq_one(root);
+    fmpq_mul_2exp(root,root,n);
+    fmpq_inv(root,root);
     _acb_poly_root_bound_fujiwara(arb_radref(radOfConv),P,deg+1);
     arb_get_rad_arb(radOfConv,radOfConv);
+    arb_pow_fmpq(radOfConv,radOfConv,root,bits);
     arb_inv(radOfConv,radOfConv,bits);
-    counter = 1;
-    fmpz_mul_2exp(&counter,&counter,n);
-    arb_root_ui(radOfConv,radOfConv,counter,bits);
+
     /* Error bound */
     arb_t radius;
     arb_init(radius);
     arb_set_si(radius,2*deg);
-    arb_root_ui(radius,radius,counter,bits);
+    arb_pow_fmpq(radius,radius,root,bits);
     arb_sub_si(radius,radius,1,bits);
     arb_mul(radius,radOfConv,radius,bits);
     arb_add_error(radOfConv,radius);
+
     arb_clear(radius);
+    fmpq_clear(root);
     _acb_vec_clear(P,degree(ODE)+1);
     return;
 }
