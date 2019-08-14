@@ -71,6 +71,8 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
     fmpz_t fac;
     fmpz_init(fac);
     slong minIndex, polyMax, newIndex;
+    /* Setting the last coefficient to 1 here reduces the number of reallocs drastically */
+    acb_poly_set_coeff_si(ODE->solution,order(ODE)+num_of_coeffs-1,1);
     for (newIndex = 0; newIndex < num_of_coeffs; newIndex++)
     {
         acb_zero(newCoeff);
@@ -78,6 +80,9 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
 
         for (slong oldIndex = newIndex+order(ODE)-1; oldIndex >= minIndex; oldIndex--)
         {
+            if (acb_poly_get_coeff_ptr(ODE->solution,oldIndex) == NULL)
+                continue;
+
             /* Loop through the polynomials */
             polyMax = degree(ODE) + oldIndex - newIndex;
             /* No more than degree(ODE) terms can contribute: */
@@ -86,9 +91,6 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
             if (polyMax > oldIndex)
                 polyMax = oldIndex;
 
-            if (acb_poly_get_coeff_ptr(ODE->solution,oldIndex) == NULL)
-                continue;
-            //acb_poly_get_coeff_acb(oldCoeff,ODE->solution,oldIndex);
             slong polyMin;
             if (oldIndex <= newIndex)
             {
@@ -106,10 +108,15 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
                 fmpz_mul_si(fac,fac,oldIndex - polyIndex);
                 acb_addmul_fmpz(temp,diff_eq_coeff(ODE,polyIndex+1,polyIndex+1+newIndex-oldIndex),fac,bits);
             }
+            if (acb_is_zero(temp))
+                continue;
             acb_addmul(newCoeff,acb_poly_get_coeff_ptr(ODE->solution,oldIndex),temp,bits);
         }
         if (acb_is_zero(newCoeff))
-            continue;
+        {
+            if (newIndex < num_of_coeffs-1)
+                continue;
+        }
         /* Divide by the coefficient of a_b where b = newIndex + order(ODE) */
         fmpz_rfac_uiui(fac,newIndex+1,order(ODE));
         fmpz_neg(fac,fac);
@@ -228,10 +235,13 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
         acb_ode_shift(ODE,z0,bits);
 
     /* Choose a path for the analytic continuation */
-    radiusOfConvergence(radOfConv,ODE,20,bits);
+    radiusOfConvergence(radOfConv,ODE,100,bits);
     if (arb_is_zero(radOfConv))
         return;
-    arb_div_si(radOfConv,radOfConv,2,bits);
+    if (!arb_is_finite(radOfConv))
+        arb_one(radOfConv);
+    else
+        arb_div_si(radOfConv,radOfConv,2,bits);
     arb_get_mid_arb(radOfConv,radOfConv);
 
     _acb_vec_unit_roots(path, steps, steps, bits);
