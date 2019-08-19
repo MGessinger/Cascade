@@ -1,6 +1,7 @@
 module Jade
 
 using Nemo
+import Base.+, Base.-, Base.*, Base./, Base.==
 
 export acb_ode,monodromy,powerSeries,setPolynomial,setInitialValues,acb_ode_legendre,acb_ode_bessel,acb_ode_hypgeom
 
@@ -15,7 +16,7 @@ function __init__()
     print("  |  _  __  ,__ \n")
     print("  | |_| | \\ |__ \n")
     print("\\_/ | | |_/ |__ \n")
-    print("\nThis is JADE v.0.9, an interface to CASCADE,\n\n")
+    print("\nThis is JADE v.0.10, an interface to CASCADE,\n\n")
     print("The C-Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations!\n")
 end
 
@@ -27,9 +28,9 @@ function acb_ode(polys::Array{acb_poly,1})
     order = length(polys)-1
     while iszero(polys[order+1])
         order -= 1
-    end
-    if order < 0
-        return
+        if order < 0
+            return acb_ode(0,Vector{acb_poly}(undef,0),C_NULL)
+        end
     end
     A = acb_ode(order,Array{acb_poly,1}(undef,order+1),C_NULL)
     A.polys = polys
@@ -47,7 +48,63 @@ function Base.show(io::IO, A::acb_ode)
         print("\npolys[",i,"] = ",A.polys[i])
     end
 end
-    
+
+function +(a::acb_ode,b::acb_ode)
+    x = a.order
+    if (b.order > x)
+       x = b.order
+    end
+    V = Vector{acb_poly}(undef,x+1)
+    for i = 1:x+1
+       if (i <= a.order+1 && i <= b.order+1)
+           V[i] = a.polys[i] + b.polys[i]
+       elseif (i > b.order+1)
+           V[i] = a.polys[i]
+       else
+           V[i] = b.polys[i]
+       end
+    end
+    return acb_ode(V)
+end
+
+function *(a::acb_ode,n::FieldElem)
+    x = a.order
+    V = Vector{acb_poly}(undef,x+1)
+    for i = 1:x+1
+        V[i] = a.polys[i]*n
+    end
+    return acb_ode(V)
+end
+
+function -(a::acb_ode, b::acb_ode)
+    c = b*(-1)
+    return a+c
+end
+
+function /(a::acb_ode,n::Union{Number,FieldElem})
+	return a*(1/n)
+end
+
+function ==(a::acb_ode,b::acb_ode)
+    if (a.order != b.order)
+        return false
+    end
+    for i = 1:a.order+1
+        if (a.polys[i] != b.polys[i])
+            return false
+        end
+    end
+    return true
+end
+
+function *(a::acb_ode,n::Number)
+    x = a.order
+    V = Vector{acb_poly}(undef,x+1)
+    for i = 1:x+1
+        V[i] = a.polys[i]*n
+    end
+    return acb_ode(V)
+end
 
 function setPolynomial(ode::acb_ode, index::Integer, polynomial::acb_poly)
     if ode.odeC != C_NULL
@@ -88,6 +145,10 @@ end
 function translateC(ode::acb_ode)
     if ode.odeC != C_NULL
         deleteC(ode)
+    end
+    if ode.order == 0
+        ode.odeC = C_NULL
+        return C_NULL
     end
     deg = 0
     for p in ode.polys
