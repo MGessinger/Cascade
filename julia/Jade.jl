@@ -1,7 +1,6 @@
 module Jade
 
 using Nemo
-import Base.+, Base.-, Base.*, Base./, Base.==
 
 export acb_ode,monodromy,powerSeries,setPolynomial,setInitialValues,acb_ode_legendre,acb_ode_bessel,acb_ode_hypgeom
 
@@ -36,74 +35,6 @@ function acb_ode(polys::Array{acb_poly,1})
     A.polys = polys
     finalizer(deleteC, A)
     return A
-end
-
-function Base.show(io::IO, A::acb_ode)
-    if A.odeC != C_NULL
-        ccall((:acb_ode_dump,:libcascade),Cvoid,(Ptr{Nothing},Ptr{Nothing}),A.odeC,C_NULL)
-        return
-    end
-    print("Order: ",A.order)
-    for i = 1:length(A.polys)
-        print("\npolys[",i,"] = ",A.polys[i])
-    end
-end
-
-function +(a::acb_ode,b::acb_ode)
-    x = a.order
-    if (b.order > x)
-       x = b.order
-    end
-    V = Vector{acb_poly}(undef,x+1)
-    for i = 1:x+1
-       if (i <= a.order+1 && i <= b.order+1)
-           V[i] = a.polys[i] + b.polys[i]
-       elseif (i > b.order+1)
-           V[i] = a.polys[i]
-       else
-           V[i] = b.polys[i]
-       end
-    end
-    return acb_ode(V)
-end
-
-function *(a::acb_ode,n::FieldElem)
-    x = a.order
-    V = Vector{acb_poly}(undef,x+1)
-    for i = 1:x+1
-        V[i] = a.polys[i]*n
-    end
-    return acb_ode(V)
-end
-
-function -(a::acb_ode, b::acb_ode)
-    c = b*(-1)
-    return a+c
-end
-
-function /(a::acb_ode,n::Union{Number,FieldElem})
-	return a*(1/n)
-end
-
-function ==(a::acb_ode,b::acb_ode)
-    if (a.order != b.order)
-        return false
-    end
-    for i = 1:a.order+1
-        if (a.polys[i] != b.polys[i])
-            return false
-        end
-    end
-    return true
-end
-
-function *(a::acb_ode,n::Number)
-    x = a.order
-    V = Vector{acb_poly}(undef,x+1)
-    for i = 1:x+1
-        V[i] = a.polys[i]*n
-    end
-    return acb_ode(V)
 end
 
 function setPolynomial(ode::acb_ode, index::Integer, polynomial::acb_poly)
@@ -226,5 +157,8 @@ function acb_ode_hypgeom(R::AcbPolyRing,a::acb,b::acb,c::acb)
     ode.odeC = ccall((:acb_ode_hypgeom,:libcascade),Ptr{Nothing},(Ref{acb},Ref{acb},Ref{acb},Cint),A,B,C,R.base_ring.prec)
     return ode
 end
+
+# External code files come here
+include("arith.jl")
 
 end
