@@ -51,7 +51,7 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
         return 1;
 
     /* First bound the number of coefficientes that are computed.
-     * This assures a proper enclosure on the one hand as well as a terminating do-while-loop on the other. */
+     * This assures a proper enclosure on the one hand as well as a terminating for loop on the other. */
     arb_t eta;
     arb_init(eta);
     if (in != NULL)
@@ -70,9 +70,17 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
     /* Now compute the recursion */
     fmpz_t fac;
     fmpz_init(fac);
-    slong minIndex, polyMax, newIndex;
-    /* Setting the last coefficient to 1 here reduces the number of reallocs drastically */
-    acb_poly_set_coeff_si(ODE->solution,order(ODE)+num_of_coeffs-1,1);
+    slong minIndex, newIndex;
+    slong polyMin, polyMax;
+    slong offset;
+
+    /* Setting this coefficient to 1 here reduces the number of reallocs drastically.
+     * The index is out of range of the loop on purpose.
+     * By doing this, I can comfortably chop it off in the end every time. */
+    acb_poly_set_coeff_si(ODE->solution,order(ODE)+num_of_coeffs+2,1);
+    /* Negating the constant coefficient of the leading polynomial saves a few cycles later on */
+    acb_neg(diff_eq_coeff(ODE,order(ODE),0),diff_eq_coeff(ODE,order(ODE),0));
+
     for (newIndex = 0; newIndex < num_of_coeffs; newIndex++)
     {
         acb_zero(newCoeff);
@@ -80,46 +88,38 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
 
         for (slong oldIndex = newIndex+order(ODE)-1; oldIndex >= minIndex; oldIndex--)
         {
-            if (acb_poly_get_coeff_ptr(ODE->solution,oldIndex) == NULL)
-                continue;
-
             /* Loop through the polynomials */
-            polyMax = degree(ODE) + oldIndex - newIndex;
-            /* No more than degree(ODE) terms can contribute: */
+            polyMax = oldIndex - minIndex;
+            /* No more than order(ODE) terms can contribute: */
             if (polyMax > order(ODE))
                 polyMax = order(ODE);
-            if (polyMax > oldIndex)
-                polyMax = oldIndex;
 
-            slong polyMin;
-            if (oldIndex <= newIndex)
+            offset = oldIndex-newIndex;
+            if (offset <= 0)
             {
                 polyMin = 0;
                 fmpz_one(fac);
             }
             else
             {
-                polyMin = oldIndex - newIndex;
-                fmpz_rfac_uiui(fac,oldIndex-polyMin+1,polyMin);
+                polyMin = offset;
+                fmpz_rfac_uiui(fac,newIndex+1,polyMin);
             }
-            acb_mul_fmpz(temp,diff_eq_coeff(ODE,polyMin,polyMin+newIndex-oldIndex),fac,bits);
+            acb_mul_fmpz(temp,diff_eq_coeff(ODE,polyMin,polyMin-offset),fac,bits);
             for (slong polyIndex = polyMin; polyIndex < polyMax; polyIndex++)
             {
                 fmpz_mul_si(fac,fac,oldIndex - polyIndex);
-                acb_addmul_fmpz(temp,diff_eq_coeff(ODE,polyIndex+1,polyIndex+1+newIndex-oldIndex),fac,bits);
+                acb_addmul_fmpz(temp,diff_eq_coeff(ODE,polyIndex+1,polyIndex+1-offset),fac,bits);
             }
             if (acb_is_zero(temp))
                 continue;
             acb_addmul(newCoeff,acb_poly_get_coeff_ptr(ODE->solution,oldIndex),temp,bits);
         }
         if (acb_is_zero(newCoeff))
-        {
-            if (newIndex < num_of_coeffs-1)
-                continue;
-        }
+            continue;
+
         /* Divide by the coefficient of a_b where b = newIndex + order(ODE) */
         fmpz_rfac_uiui(fac,newIndex+1,order(ODE));
-        fmpz_neg(fac,fac);
         acb_mul_fmpz(temp,diff_eq_coeff(ODE,order(ODE),0),fac,bits);
         acb_div(newCoeff,newCoeff,temp,bits);
 
@@ -131,10 +131,12 @@ ulong find_power_series(acb_ode_t ODE, acb_t in, arb_t rad, slong bits)
         }
         acb_poly_set_coeff_acb(ODE->solution,newIndex+order(ODE),newCoeff);
     }
+    acb_poly_truncate(ODE->solution,order(ODE)+num_of_coeffs+1);
     if (newIndex == 0)
         acb_ode_dump(ODE,"odedump.txt");
-    else
-        acb_poly_truncate(ODE->solution,order(ODE)+newIndex+1);
+
+    /* Undo the negation performed earlier */
+    acb_neg(diff_eq_coeff(ODE,order(ODE),0),diff_eq_coeff(ODE,order(ODE),0));
 
     acb_clear(newCoeff);
     acb_clear(temp);

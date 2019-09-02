@@ -1,5 +1,27 @@
 #include "acb_ode.h"
 
+/* Static function */
+
+static short interpret (acb_poly_t *polys, acb_ode_t ODE)
+{
+    /* Find the characteristic "size" of the ODE */
+    slong polyMaxDeg = 0, ord = order(ODE);
+    while (polys[ord] == NULL || acb_poly_is_zero(polys[ord]))
+        ord--;
+    if (ord <= 0)
+        return INVALID_DATA;
+    for (slong i = 0; i <= ord; i++)
+    {
+        if (polys[i] == NULL)
+            continue;
+        if (polyMaxDeg < acb_poly_degree(polys[i]))
+            polyMaxDeg = acb_poly_degree(polys[i]);
+    }
+    order(ODE) = ord;
+    degree(ODE) = polyMaxDeg;
+    return ORDINARY;
+}
+
 /* Setup and memory management*/
 
 acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order)
@@ -211,27 +233,7 @@ slong acb_ode_reduce (acb_ode_t ODE)
     return reduced;
 }
 
-/* Helper functions, never to be called explicitly */
-
-short interpret (acb_poly_t *polys, acb_ode_t ODE)
-{
-    /* Find the characteristic "size" of the ODE */
-    slong polyMaxDeg = 0, ord = order(ODE);
-    while (polys[ord] == NULL || acb_poly_is_zero(polys[ord]))
-        ord--;
-    if (ord <= 0)
-        return INVALID_DATA;
-    for (slong i = 0; i <= ord; i++)
-    {
-        if (polys[i] == NULL)
-            continue;
-        if (polyMaxDeg < acb_poly_degree(polys[i]))
-            polyMaxDeg = acb_poly_degree(polys[i]);
-    }
-    order(ODE) = ord;
-    degree(ODE) = polyMaxDeg;
-    return ORDINARY;
-}
+/* This function is so terrible, you probably don't want to use it. Ever. */
 
 void parsePoly(acb_poly_t polyOut, const char *polyString, const slong strLength, slong bits)
 {
