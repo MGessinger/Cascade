@@ -2,42 +2,46 @@ module Jade
 
 using Nemo
 
-export acb_ode,monodromy,powerSeries,setPolynomial,setInitialValues,acb_ode_legendre,acb_ode_bessel,acb_ode_hypgeom
+export diffEq,jade_ode,acb_ode,arb_ode,monodromy,powerSeries,setPolynomial!,setInitialValues,acb_ode_legendre,acb_ode_bessel,acb_ode_hypgeom
 
-mutable struct acb_ode{T<:Integer}
-    order::T
-    polys::Array{acb_poly,1}
+abstract type diffEq end
+
+mutable struct jade_ode{P<:PolyElem} <: diffEq
+    order::Int
+    polys::Vector{P}
     odeC::Ptr{Nothing}
 end
+
+global const arb_ode = jade_ode{arb_poly}
+global const acb_ode = jade_ode{acb_poly}
 
 function __init__()
     print("\n")
     print("  |  _  __  ,__ \n")
     print("  | |_| | \\ |__ \n")
     print("\\_/ | | |_/ |__ \n")
-    print("\nThis is JADE v.0.10, an interface to CASCADE,\n\n")
+    print("\nThis is JADE v.0.11, an interface to CASCADE,\n\n")
     print("The C-Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations!\n")
 end
 
-function acb_ode(polys::Array{acb_poly,1})
+function jade_ode{P}(polys::Vector{P}) where P <: PolyElem
     if (length(polys) == 0)
         return
     end
     deg = 0
-    order = length(polys)-1
-    while iszero(polys[order+1])
+    order = length(polys)
+    while iszero(polys[order])
         order -= 1
         if order < 0
-            return acb_ode(0,Vector{acb_poly}(undef,0),C_NULL)
+            return
         end
     end
-    A = acb_ode(order,Array{acb_poly,1}(undef,order+1),C_NULL)
-    A.polys = polys
+    A = jade_ode{P}(order-1,polys[1:order],C_NULL)
     finalizer(deleteC, A)
     return A
 end
 
-function setPolynomial(ode::acb_ode, index::Integer, polynomial::acb_poly)
+function setPolynomial!(ode::jade_ode{T}, index::Integer, polynomial::T) where T <: PolyElem
     if ode.odeC != C_NULL
         deleteC(ode)
     end
@@ -45,12 +49,12 @@ function setPolynomial(ode::acb_ode, index::Integer, polynomial::acb_poly)
         if iszero(polynomial)
             return
         end
-        arr = Array{acb_poly,1}(undef,index)
+        arr = Vector{T}(undef,index)
         for i = 1:index-1
             if i <= ode.order+1
                 arr[i] = ode.polys[i]
             else
-                arr[i] = ode.polys[i].parent(0)
+                arr[i] = zero(polynomial)
             end
         end
         ode.polys = arr
@@ -58,17 +62,9 @@ function setPolynomial(ode::acb_ode, index::Integer, polynomial::acb_poly)
     end
     ode.polys[index] = polynomial
     # The number of polynomials might have changed
-    ord = ode.order
-    while iszero(ode.polys[ord+1])
-        ord -= 1
-    end
-    if ord != ode.order
-        ode.order = ord
-        arr = typeof(ode.polys)(undef,ode.order+1)
-        for i = 1:ode.order+1
-            arr[i] = ode.polys[i]
-        end
-        ode.polys = arr
+    while iszero(ode.polys[ode.order+1])
+        ode.order -= 1
+		pop!(ode.polys)
     end
     return
 end
@@ -95,7 +91,7 @@ function translateC(ode::acb_ode)
     return A
 end
 
-function deleteC(ode::acb_ode)
+function deleteC(ode::diffEq)
     if ode.odeC == C_NULL
         return
     end
