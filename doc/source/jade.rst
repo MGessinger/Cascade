@@ -8,26 +8,35 @@ Jade provides an interactive interface to Cascade, which can be used from Julia'
 
 In the following, all functions are listed with their full name. However most functions are exported from Jade and can therefore be called without the *Jade.*-prefix.
 
-Types
+Types and Aliases
 --------------------
+
+.. type:: jade_ode{P<:PolyElem}
+
+    Contains an array of type *P*, the order of the differential equation and a pointer of type *nothing*. If *P == acb_poly*, then the latter is used to store a pointer to an `acb_ode_t` created by Cascade.
+
+.. warning::
+
+    The pointer value should never be accessed directly by the user! Pointers are created and free'd by Cascade. Any incorrect value can (and almost certainly will) lead to corruption and a Segmentation Fault.
+
+.. type:: arb_ode
+
+	This is an alias for jade_ode{arb_poly}.
 
 .. type:: acb_ode
 
-    Contains an array of type acb_poly, the order of the differential equation and a pointer of type *nothing*. The latter is used to store a pointer to an `acb_ode_t` created by Cascade.
+	This is an alias for jade_ode{acb_poly}.
 
-.. function:: acb_ode(polys::Vector{abc})
+.. type:: diffEq
 
-    This is the recommended constructor for variables of type :type:`acb_ode`. The polynomials are ordered in such a way that the polynomial corresponding to the n-th derivative has the index n+1 within the array.
-
-.. warning::
-    The pointer value should never be accessed directly by the user! Pointers are created and free'd by Cascade. Any incorrect value can (and almost certainly will) lead to corruption and a Segmentation Fault.
+	An abstract type, acting as a parent type for all jade_ode{P}-types, i.e. jade_ode{P <:PolyElem} <: diffEq.
 
 Memory Management
 --------------------
 
-.. function:: Jade.acb_ode(polys::Array{acb_poly,1})
+.. function:: Jade.jade_ode{P}(polys::Vector{P})
 
-    Creates a struct of type `acb_ode` from *polys*. The order will be determined internally.
+    This is the recommended constructor for variables of type :type:`jade_ode`. The polynomials are ordered in such a way that the polynomial corresponding to the n-th derivative has the index n+1 within the array.
 
 .. function:: Jade.translateC(ode::acb_ode)
 

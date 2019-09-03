@@ -56,12 +56,11 @@ function *(a::diffEq,n::FieldElem)
 end
 
 function *(a::diffEq,n::Number)
-    x = a.order
-    V = typeof(a.polys)(undef,x+1)
+    V = typeof(a.polys)(undef,a.order+1)
     for i = eachindex(a.polys)
         V[i] = a.polys[i]*n
     end
-    return jade_ode(x,V,C_NULL)
+    return jade_ode(a.order,V,C_NULL)
 end
 
 # Because multiplication is commutative, we introduce two methods

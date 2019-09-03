@@ -62,9 +62,9 @@ function setPolynomial!(ode::jade_ode{T}, index::Integer, polynomial::T) where T
     end
     ode.polys[index] = polynomial
     # The number of polynomials might have changed
-    while iszero(ode.polys[ode.order+1])
+    while iszero(ode.polys[end])
         ode.order -= 1
-		pop!(ode.polys)
+        pop!(ode.polys)
     end
     return
 end
