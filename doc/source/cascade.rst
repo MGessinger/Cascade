@@ -32,9 +32,12 @@ Special Equations
 Functions
 ------------------
 
-.. function:: ulong find_power_series (acb_ode_t ODE, acb_t z, arb_t rad, slong bits)
+.. function:: slong truncation_bound (arb_t eta, arb_t rho, slong bits)
+	Return a bound for the number of coefficients necessary to assert the Taylor expansion to have a tail of less than 2^-*bits*.
 
-    Finds a solution to *ODE*, by recursively computing the coefficients of the power series expansion. *z* stores the distance from the origin within which a precision of *bits* should be achieved. *rad* contains a lower bound for the radius of convergence. This could (and in general should) be obtained by calling :func:`radiusOfConvergence`.
+.. function:: slong find_power_series (acb_ode_t ODE, slong numOfCoeffs, slong bits)
+
+    Finds a solution to *ODE*, by recursively computing the coefficients of the power series expansion until the solution has a degree of *numOfCoeffs*. This number could (and in general should) be obtained by calling :func:`truncation_bound`.
 
 .. function:: void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len, slong prec, int output_series)
 
