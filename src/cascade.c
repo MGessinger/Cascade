@@ -214,7 +214,7 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
         flint_printf("The ODE is the NULL-pointer. Please confirm input.\n");
         return;
     }
-    slong steps = 32;
+    slong steps = 256;
     acb_ptr path = _acb_vec_init(steps+1);
     arb_t radOfConv;
     arb_init(radOfConv);
@@ -223,7 +223,7 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
         acb_ode_shift(ODE,z0,bits);
 
     /* Choose a path for the analytic continuation */
-    radiusOfConvergence(radOfConv,ODE,100,bits);
+    radiusOfConvergence(radOfConv,ODE,40,bits);
     if (arb_is_zero(radOfConv))
         return;
     if (!arb_is_finite(radOfConv))
