@@ -174,28 +174,24 @@ void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path,
 {
     /* Evaluate a solution along the given piecewise linear path */
     acb_t a; acb_init(a);
-    acb_set(a,path);
-
+    acb_ode_t ODE_shift = acb_ode_init_blank(degree(ODE),order(ODE));
     slong time = 0;
     for (; time+1 < len; time++)
     {
-        acb_ode_shift(ODE,a,bits);
+        acb_ode_shift(ODE_shift,ODE,path+time,bits);
         acb_sub(a,path+time+1,path+time,bits);
-        if (find_power_series(ODE,numOfCoeffs,bits) == 0)
+        if (find_power_series(ODE_shift,numOfCoeffs,bits) == 0)
         {
             flint_printf("The power series expansion did not converge from ");
             acb_printd(path+time,10);
             flint_printf(" to ");
             acb_printd(path+time+1,10);
             flint_printf(" where t = %w.\n",time);
-            time++;
             break;
         }
-        acb_poly_taylor_shift(ODE->solution,ODE->solution,a,bits);
+        acb_poly_taylor_shift(ODE->solution,ODE_shift->solution,a,bits);
+        acb_poly_truncate(ODE->solution,order(ODE)+1);
     }
-    /* Move it back to the point of origin */
-    acb_neg(a,path+time-1);
-    acb_ode_shift(ODE,a,bits);
     if (output_solution == TRUE)
     {
         if (acb_poly_length(ODE->solution) < order(ODE))
@@ -203,6 +199,7 @@ void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path,
         else
             _acb_vec_set(res,acb_poly_get_coeff_ptr(ODE->solution,0),order(ODE));
     }
+    acb_ode_clear(ODE_shift);
     acb_clear(a);
     return;
 }
@@ -220,7 +217,7 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
     arb_init(radOfConv);
     /* Move to the given singularity */
     if (z0 != NULL && acb_is_finite(z0))
-        acb_ode_shift(ODE,z0,bits);
+        acb_ode_shift(ODE,ODE,z0,bits);
 
     /* Choose a path for the analytic continuation */
     radiusOfConvergence(radOfConv,ODE,40,bits);
@@ -254,14 +251,14 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
     if (z0 != NULL && acb_is_finite(z0))
     {
         acb_neg(z0,z0);
-        acb_ode_shift(ODE,z0,bits);
+        acb_ode_shift(ODE,ODE,z0,bits);
         acb_neg(z0,z0);
     }
     _acb_vec_clear(path,steps+1);
     return;
 }
 
-void graeffe_transform(acb_ptr dest, acb_srcptr src, slong len, slong bits)
+void acb_poly_graeffe_transform(acb_ptr dest, acb_srcptr src, slong len, slong bits)
 {
     /* Computes the Graeffe transform of src. In- and output can be aliased. */
     slong q = (len-1)/2;
@@ -311,7 +308,7 @@ void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong n, slong bits)
 
     /* Graeffe Transform */
     for (slong counter = 0; counter < n; counter++)
-        graeffe_transform(P,P,deg+1,bits);
+        acb_poly_graeffe_transform(P,P,deg+1,bits);
 
     /* Evaluation */
     fmpq_t root;
