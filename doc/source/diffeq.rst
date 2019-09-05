@@ -34,6 +34,10 @@ Types, macros and constants
 Memory management
 ------------------------------------------------------------------------
 
+.. function:: acb_ode_t acb_ode_init_blank (slong degree, slong order)
+
+    Returns a pointer of type `acb_ode_t`, which contains space for *order+1* polynomials of length no more than *degree+1*.
+
 .. function:: acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order)
 
     Returns a pointer of type `acb_ode_t`, which has been initialized to *polys*. The internal power series is set to *initial*. *initial* can be *NULL*.
@@ -62,6 +66,10 @@ Conversions
 
 .. caution::
     The degree(ODE) is adjusted internally, but no heap (de-)allocation is performed. Therefore the return value of `acb_ode_reduce` must be stored in all cases and finally, before using `acb_ode_clear`, added back onto degree(ODE) to avoid memory leaks!
+
+.. function:: acb_ode_shift(acb_ode_t ODE_out, acb_ode_t ODE_in, acb_t a, slong bits)
+
+    Transform the origin of *ODE_in* to *a* and store the result in ODE_out. The power series solution of *ODE_in* is not transformed.
 
 Input and Output
 ------------------------------------------------------------------------

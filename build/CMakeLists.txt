@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(Cascade VERSION 0.7.3)
+project(Cascade VERSION 0.8.1)
 
 set(CascadeSrc
     ../src/cascade.c

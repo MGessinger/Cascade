@@ -34,7 +34,7 @@ Functions
 
 .. function:: slong truncation_bound (arb_t eta, arb_t rho, slong bits)
 
-	Return a bound for the number of coefficients necessary to assert the Taylor expansion to have a tail of less than 2^-*bits*.
+    Return a bound for the number of coefficients necessary to assert the Taylor expansion to have a tail of less than 2^-*bits*.
 
 .. function:: slong find_power_series (acb_ode_t ODE, slong numOfCoeffs, slong bits)
 
@@ -60,3 +60,7 @@ Functions
         R < 2 min\{\left| \frac{a_n}{a_k} \right| ^{1/k} \mid a_k \neq 0 \}.
     
     The inverse of this bound then yields a lower bound on the distance to the nearest root of *ODE*.
+
+.. function:: void acb_poly_graeffe_transform(acb_ptr dest, acb_srcptr src, slong len, slong bits)
+
+    Computes the Graeffe Transform of src and stores the result in dest. Aliasing is allowed.

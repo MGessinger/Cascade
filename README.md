@@ -1,6 +1,6 @@
 # Cascade - The C Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations
 
-Welcome to Cascade v0.8.
+Welcome to Cascade v0.8.1.
 Cascade is a library designed to store and solve differential equations to arbitrary precision. This is accomplished through the use of [Arblib](https://arblib.org)'s acb data type, which uses ball arithmetic to store arbitrary precision floats with error bounds. Solutions are computed as power series expanions around the origin using a recursion relation between the coefficients. With the help of analytic continuation this can be turned into a solution anywhere in the complex plane.
 
 Author: Matthias Gessinger
