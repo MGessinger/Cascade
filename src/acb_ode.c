@@ -24,6 +24,26 @@ static short interpret (acb_poly_t *polys, acb_ode_t ODE)
 
 /* Setup and memory management*/
 
+acb_ode_t acb_ode_init_blank(slong degree, slong order)
+{
+    if (degree < 0 || order <= 0)
+        return NULL;
+    /* Prepare the Differential equation for later use */
+    acb_ode_t ODE = flint_malloc(sizeof(acb_ode_struct));
+    if (ODE == NULL) {
+        flint_printf("Initalisation of the differential equation failed. Please try again.\n");
+        return NULL;
+    }
+    order(ODE) = order;
+    degree(ODE) = degree;
+    ODE->polys = flint_malloc((order(ODE)+1)*sizeof(acb_ptr));
+    for (slong i = 0; i <= order(ODE); i++) {
+        (ODE->polys)[i] = _acb_vec_init(degree(ODE)+1);
+    }
+    acb_poly_init(ODE->solution);
+    return ODE;
+}
+
 acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order)
 {
     /* Prepare the Differential equation for later use */
@@ -184,22 +204,21 @@ void acb_ode_dump(acb_ode_t ODE, char *file)
 
 /* Transformations */
 
-void acb_ode_shift (acb_ode_t ODE, acb_t a, slong bits)
+void acb_ode_shift (acb_ode_t ODE_out, acb_ode_t ODE_in, acb_srcptr a, slong bits)
 {
     /* Shifts the origin to a */
-    if (ODE == NULL)
+    if (!ODE_in || !ODE_out)
         return;
+    acb_ode_set(ODE_out,ODE_in);
     if (acb_is_zero(a))
         return;
-    if (degree(ODE) < 1)
+    if (degree(ODE_out) == 0)
         return;
-    for (slong j = 0; j <= order(ODE); j++)
+    for (slong j = 0; j <= order(ODE_out); j++)
     {
-        if (diff_eq_poly(ODE,j) == NULL)
+        if (diff_eq_poly(ODE_out,j) == NULL)
             continue;
-        if (_acb_vec_is_zero(diff_eq_poly(ODE,j),degree(ODE)+1))
-            continue;
-        _acb_poly_taylor_shift(diff_eq_poly(ODE,j),a,degree(ODE)+1,bits);
+        _acb_poly_taylor_shift(diff_eq_poly(ODE_out,j),a,degree(ODE_out)+1,bits);
     }
     return;
 }

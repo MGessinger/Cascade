@@ -1,25 +1,5 @@
 #include "juliaInterface.h"
 
-acb_ode_t acb_ode_setup_blank(slong degree, slong order)
-{
-    if (degree < 0 || order <= 0)
-        return NULL;
-    /* Prepare the Differential equation for later use */
-    acb_ode_t ODE = flint_malloc(sizeof(acb_ode_struct));
-    if (ODE == NULL) {
-        flint_printf("Initalisation of the differential equation failed. Please try again.\n");
-        return NULL;
-    }
-    order(ODE) = order;
-    degree(ODE) = degree;
-    ODE->polys = flint_malloc((order(ODE)+1)*sizeof(acb_ptr));
-    for (slong i = 0; i <= order(ODE); i++) {
-        (ODE->polys)[i] = _acb_vec_init(degree(ODE)+1);
-    }
-    acb_poly_init(ODE->solution);
-    return ODE;
-}
-
 short acb_ode_set_poly(acb_ode_t ODE, acb_poly_struct poly, slong index)
 {
     if (ODE == NULL)
