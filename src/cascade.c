@@ -11,9 +11,8 @@ slong truncation_order (arb_t eta, arb_t alpha, slong bits)
     arb_t r;
     arb_init(r);
     /* Prepare r as a specific convex combination */
-    arb_mul_si(r,eta,801,bits);
-    arb_addmul_si(r,alpha,199,bits);
-    arb_div_si(r,r,1000,bits);
+    arb_add(r,eta,alpha,bits);
+    arb_mul_2exp_si(r,r,-1);
     /* The value of r is uninteresting. Only the quotient eta/r is relevant. */
     arb_div(r,eta,r,bits);
 
@@ -22,8 +21,8 @@ slong truncation_order (arb_t eta, arb_t alpha, slong bits)
     arb_init(N);
     arb_init(temp);
 
-    arb_sub_si(temp,r,1,bits);
-    arb_neg(temp,temp);
+    arb_one(temp);
+    arb_sub(temp,temp,r,bits);
     arb_log(N,temp,bits);
 
     arb_const_log2(temp,bits);

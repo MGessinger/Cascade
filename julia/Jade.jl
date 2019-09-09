@@ -83,7 +83,7 @@ function translateC(ode::acb_ode)
             deg = degree(p)
         end
     end
-    A = ccall( (:acb_ode_setup_blank,"libcascade"), Ptr{Nothing}, (Cint,Cint), deg, ode.order)
+    A = ccall( (:acb_ode_init_blank,"libcascade"), Ptr{Nothing}, (Cint,Cint), deg, ode.order)
     for i = 1:ode.order+1
         ccall( (:acb_ode_set_poly,"libcascade"), Cint, (Ptr{Nothing},acb_poly,Cint), A, ode.polys[i], i-1)
     end
