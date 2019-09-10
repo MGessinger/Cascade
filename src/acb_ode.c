@@ -40,11 +40,10 @@ acb_ode_t acb_ode_init_blank(slong degree, slong order)
     for (slong i = 0; i <= order(ODE); i++) {
         (ODE->polys)[i] = _acb_vec_init(degree(ODE)+1);
     }
-    acb_poly_init(ODE->solution);
     return ODE;
 }
 
-acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order)
+acb_ode_t acb_ode_init (acb_poly_t *polys, slong order)
 {
     /* Prepare the Differential equation for later use */
     if (polys == NULL)
@@ -72,9 +71,6 @@ acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order)
             acb_poly_get_coeff_acb(diff_eq_coeff(ODE,i,j),polys[i],j);
         }
     }
-    acb_poly_init(ODE->solution);
-    if (initial != NULL)
-        acb_poly_set(ODE->solution,initial);
     return ODE;
 }
 
@@ -87,9 +83,7 @@ void acb_ode_clear (acb_ode_t ODE)
         _acb_vec_clear((ODE->polys)[i],degree(ODE)+1);
     }
     flint_free(ODE->polys);
-    acb_poly_clear(ODE->solution);
     flint_free(ODE);
-    flint_cleanup();
     return;
 }
 
@@ -111,13 +105,11 @@ acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in)
         {
             (ODE_out->polys)[i] = _acb_vec_init(degree(ODE_out)+1);
         }
-        acb_poly_init(ODE_out->solution);
     }
     for (slong i = 0; i <= order(ODE_out); i++)
     {
         _acb_vec_set(diff_eq_poly(ODE_out,i),diff_eq_poly(ODE_in,i),degree(ODE_out)+1);
     }
-    acb_poly_set(ODE_out->solution,ODE_in->solution);
     return ODE_out;
 }
 
@@ -165,7 +157,7 @@ acb_ode_t acb_ode_fread(const char *fileName, ulong maxOrder, slong bits)
             parsePoly(polys[derivative],poly,length,bits);
     } while (fscanf(input,"%*[^a-z]%*c%lu*(",&derivative) != EOF);
     fclose(input);
-    acb_ode_t ODE =  acb_ode_init(polys,NULL,numberOfPols);
+    acb_ode_t ODE =  acb_ode_init(polys,numberOfPols);
     for (ulong i = 0; i <= numberOfPols; i++)
         acb_poly_clear(polys[i]);
     flint_free(polys);
@@ -194,9 +186,6 @@ void acb_ode_dump(acb_ode_t ODE, char *file)
         }
         flint_fprintf(out,"\n");
     }
-    flint_fprintf(out,"\nSolution:\n");
-    acb_poly_fprintd(out,ODE->solution,10);
-    flint_fprintf(out,"\n");
     if (out != stdout)
         fclose(out);
     return;

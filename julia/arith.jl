@@ -1,13 +1,13 @@
 import Base.+, Base.-, Base.*, Base./, Base.==
 
-function Base.show(io::IO, A::diffEq)
+function Base.show(io::IO, A::diffOp)
     print("Order: ",A.order)
     for i = 1:length(A.polys)
         print("\npolys[$i] = ",A.polys[i])
     end
 end
 
-function ==(a::diffEq,b::diffEq)
+function ==(a::diffOp,b::diffOp)
     if (a.order != b.order)
         return false
     end
@@ -37,7 +37,7 @@ function +(a::jade_ode{P},b::jade_ode{P}) where P <: PolyElem
     return jade_ode{P}(V)
 end
 
-function *(a::diffEq,n::FieldElem)
+function *(a::diffOp,n::FieldElem)
     x = a.order
     V = Vector{PolyElem}(undef,x+1)
     try
@@ -55,7 +55,7 @@ function *(a::diffEq,n::FieldElem)
     return jade_ode(x,V,C_NULL)
 end
 
-function *(a::diffEq,n::Number)
+function *(a::diffOp,n::Number)
     V = typeof(a.polys)(undef,a.order+1)
     for i = eachindex(a.polys)
         V[i] = a.polys[i]*n
@@ -64,15 +64,15 @@ function *(a::diffEq,n::Number)
 end
 
 # Because multiplication is commutative, we introduce two methods
-function *(n::Union{FieldElem,Number},a::diffEq)
+function *(n::Union{FieldElem,Number},a::diffOp)
     return a*n
 end
 
-function -(a::diffEq, b::diffEq)
+function -(a::diffOp, b::diffOp)
     c = b*(-1)
     return a+c
 end
 
-function /(a::diffEq,n::Union{Number,FieldElem})
+function /(a::diffOp,n::Union{Number,FieldElem})
     return a*inv(n)
 end

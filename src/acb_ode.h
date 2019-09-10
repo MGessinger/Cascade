@@ -16,7 +16,6 @@ typedef struct acb_ode_struct {
     slong order;
     slong degree;
     acb_struct **polys;
-    acb_poly_t solution;
 } acb_ode_struct;
 
 typedef acb_ode_struct* acb_ode_t;
@@ -28,7 +27,7 @@ acb_ode_t acb_ode_hypgeom (acb_t a, acb_t b, acb_t c, slong bits);
 
 /* Setup and memory management */
 acb_ode_t acb_ode_init_blank (slong degree, slong order);
-acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order);
+acb_ode_t acb_ode_init (acb_poly_t *polys, slong order);
 void      acb_ode_clear (acb_ode_t ODE);
 acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in);
 

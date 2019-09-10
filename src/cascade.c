@@ -40,12 +40,36 @@ slong truncation_order (arb_t eta, arb_t alpha, slong bits)
     return n;
 }
 
-slong find_power_series(acb_ode_t ODE, slong numOfCoeffs, slong bits)
+void acb_poly_graeffe_transform(acb_ptr dest, acb_srcptr src, slong len, slong bits)
+{
+    /* Computes the Graeffe transform of src. In- and output can be aliased. */
+    slong q = (len-1)/2;
+    acb_ptr pe = _acb_vec_init(q+1);
+    acb_ptr po = _acb_vec_init(len);
+    for (slong i = 0; i < len; i++)
+    {
+        if (i%2 == 0)
+            acb_set(pe+(i/2),src+i);
+        else
+            acb_set(po+(i/2),src+i);
+    }
+    _acb_poly_mul(dest,po,q+1,po,q+1,bits);
+    _acb_poly_shift_left(dest,dest,len-1,1);
+    _acb_vec_neg(dest,dest,len);
+    _acb_poly_mul(po,pe,q+1,pe,q+1,bits);
+    _acb_vec_add(dest,dest,po,len,bits);
+
+    _acb_vec_clear(pe,q+1);
+    _acb_vec_clear(po,len);
+    return;
+}
+
+slong find_power_series(acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong bits)
 {
     /* Iteratively compute the first numOfCoeffs coefficients of the power series solution of the ODE around zero */
-    if (ODE == NULL)
+    if (!ODE || !res)
         return 0;
-    if (numOfCoeffs <= 0 || acb_poly_is_zero(ODE->solution))
+    if (numOfCoeffs <= 0 || acb_poly_is_zero(res))
         return 1;
 
     /* Only now does it make sense to initialise variables */
@@ -62,7 +86,7 @@ slong find_power_series(acb_ode_t ODE, slong numOfCoeffs, slong bits)
     /* Setting this coefficient to 1 here reduces the number of reallocs drastically.
      * The index is out of range of the loop on purpose.
      * By doing this, I can comfortably chop it off in the end every time. */
-    acb_poly_set_coeff_si(ODE->solution,numOfCoeffs+2,1);
+    acb_poly_set_coeff_si(res,numOfCoeffs+2,1);
     /* Negating the constant coefficient of the leading polynomial saves a few cycles later on */
     acb_neg(diff_eq_coeff(ODE,order(ODE),0),diff_eq_coeff(ODE,order(ODE),0));
 
@@ -100,7 +124,7 @@ slong find_power_series(acb_ode_t ODE, slong numOfCoeffs, slong bits)
             }
             if (acb_is_zero(temp))
                 continue;
-            acb_addmul(newCoeff,acb_poly_get_coeff_ptr(ODE->solution,oldIndex),temp,bits);
+            acb_addmul(newCoeff,acb_poly_get_coeff_ptr(res,oldIndex),temp,bits);
         }
         if (acb_is_zero(newCoeff))
             continue;
@@ -116,9 +140,9 @@ slong find_power_series(acb_ode_t ODE, slong numOfCoeffs, slong bits)
             newIndex = 0;
             break;
         }
-        acb_poly_set_coeff_acb(ODE->solution,newIndex,newCoeff);
+        acb_poly_set_coeff_acb(res,newIndex,newCoeff);
     }
-    acb_poly_truncate(ODE->solution,numOfCoeffs+1);
+    acb_poly_truncate(res,numOfCoeffs+1);
     if (newIndex == 0)
         acb_ode_dump(ODE,"odedump.txt");
 
@@ -131,45 +155,8 @@ slong find_power_series(acb_ode_t ODE, slong numOfCoeffs, slong bits)
     return newIndex;
 }
 
-int checkODE (acb_poly_t *polys, acb_ode_t ODE, acb_t z, slong bits)
-{
-    acb_poly_t result, polyder, summand;
-    acb_poly_init(polyder);
-    acb_poly_init(summand);
-    acb_poly_init(result);
-
-    acb_t res; acb_init(res);
-    mag_t absValue; mag_init(absValue);
-    int incorrect = 0;
-
-    acb_poly_set(polyder,ODE->solution);
-    for (slong n = 0; n <= order(ODE); n++)
-    {
-        if (polys[n] == NULL)
-            continue;
-        acb_poly_mul(summand,polyder,polys[n],bits);
-        acb_poly_add(result,result,summand,bits);
-        acb_poly_derivative(polyder,polyder,bits);
-    }
-    acb_poly_evaluate(res,result,z,bits);
-    acb_get_mag(absValue,res);
-    if (mag_cmp_2exp_si(absValue,-bits*0.90) >= 0)
-    {
-        incorrect = 1;
-        acb_ode_dump(ODE,"odedump.txt");
-    }
-
-    acb_poly_clear(summand);
-    acb_poly_clear(polyder);
-    acb_poly_clear(result);
-
-    mag_clear(absValue);
-    acb_clear(res);
-    return incorrect;
-}
-
-void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path,
-                            slong len, slong numOfCoeffs, slong bits, int output_solution)
+void analytic_continuation (acb_poly_t res, acb_ode_t ODE, acb_srcptr path,
+                            slong len, slong numOfCoeffs, slong bits)
 {
     /* Evaluate a solution along the given piecewise linear path */
     acb_t a; acb_init(a);
@@ -179,7 +166,7 @@ void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path,
     {
         acb_ode_shift(ODE_shift,ODE,path+time,bits);
         acb_sub(a,path+time+1,path+time,bits);
-        if (find_power_series(ODE_shift,numOfCoeffs,bits) == 0)
+        if (find_power_series(res,ODE_shift,numOfCoeffs,bits) == 0)
         {
             flint_printf("The power series expansion did not converge from ");
             acb_printd(path+time,10);
@@ -188,30 +175,21 @@ void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path,
             flint_printf(" where t = %w.\n",time);
             break;
         }
-        acb_poly_taylor_shift(ODE->solution,ODE_shift->solution,a,bits);
-        acb_poly_truncate(ODE->solution,order(ODE)+1);
-    }
-    if (output_solution == TRUE)
-    {
-        if (acb_poly_length(ODE->solution) < order(ODE))
-            _acb_vec_set(res,acb_poly_get_coeff_ptr(ODE->solution,0),acb_poly_length(ODE->solution));
-        else
-            _acb_vec_set(res,acb_poly_get_coeff_ptr(ODE->solution,0),order(ODE));
+        acb_poly_taylor_shift(res,res,a,bits);
+        acb_poly_truncate(res,order(ODE)+1);
     }
     acb_ode_clear(ODE_shift);
     acb_clear(a);
     return;
 }
 
-void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong bits)
+void find_monodromy_matrix (acb_mat_t mono, acb_ode_t ODE, acb_t z0, slong bits)
 {
     if (ODE == NULL)
     {
-        flint_printf("The ODE is the NULL-pointer. Please confirm input.\n");
+        flint_printf("No differential operator was provided. Please confirm your input.\n");
         return;
     }
-    slong steps = 256;
-    acb_ptr path = _acb_vec_init(steps+1);
     arb_t radOfConv;
     arb_init(radOfConv);
     /* Move to the given singularity */
@@ -228,6 +206,11 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
         arb_div_si(radOfConv,radOfConv,2,bits);
     arb_get_mid_arb(radOfConv,radOfConv);
 
+    /* Now initialize the path to move along and a polynomial to store the power series */
+    slong steps = 256;
+    acb_ptr path = _acb_vec_init(steps+1);
+    acb_poly_t res;
+    acb_poly_init(res);
     _acb_vec_unit_roots(path, steps, steps, bits);
     _acb_vec_scalar_mul_arb(path,path,steps,radOfConv,bits);
 
@@ -241,11 +224,12 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
     /* Compute the function along the chosen path */
     for (slong i = 0; i < order(ODE); i++)
     {
-        acb_poly_zero(ODE->solution);
-        acb_poly_set_coeff_si(ODE->solution,i,1);
-        analytic_continuation(acb_mat_entry(monodromy,i,0),ODE,path,steps+1,numOfCoeffs,bits,TRUE);
+        acb_poly_zero(res);
+        acb_poly_set_coeff_si(res,i,1);
+        analytic_continuation(res,ODE,path,steps+1,numOfCoeffs,bits);
+        _acb_vec_set(acb_mat_entry_ptr(mono,i,0),acb_poly_get_coeff_ptr(res,0),order(ODE));
     }
-    acb_mat_transpose(monodromy,monodromy);
+    acb_mat_transpose(mono,mono);
     /* Move back to the start */
     if (z0 != NULL && acb_is_finite(z0))
     {
@@ -253,31 +237,8 @@ void find_monodromy_matrix (acb_mat_t monodromy, acb_ode_t ODE, acb_t z0, slong 
         acb_ode_shift(ODE,ODE,z0,bits);
         acb_neg(z0,z0);
     }
+    acb_poly_clear(res);
     _acb_vec_clear(path,steps+1);
-    return;
-}
-
-void acb_poly_graeffe_transform(acb_ptr dest, acb_srcptr src, slong len, slong bits)
-{
-    /* Computes the Graeffe transform of src. In- and output can be aliased. */
-    slong q = (len-1)/2;
-    acb_ptr pe = _acb_vec_init(q+1);
-    acb_ptr po = _acb_vec_init(len);
-    for (slong i = 0; i < len; i++)
-    {
-        if (i%2 == 0)
-            acb_set(pe+(i/2),src+i);
-        else
-            acb_set(po+(i/2),src+i);
-    }
-    _acb_poly_mul(dest,po,q+1,po,q+1,bits);
-    _acb_poly_shift_left(dest,dest,len-1,1);
-    _acb_vec_neg(dest,dest,len);
-    _acb_poly_mul(po,pe,q+1,pe,q+1,bits);
-    _acb_vec_add(dest,dest,po,len,bits);
-
-    _acb_vec_clear(pe,q+1);
-    _acb_vec_clear(po,len);
     return;
 }
 

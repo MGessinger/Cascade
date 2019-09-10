@@ -2,11 +2,11 @@ module Jade
 
 using Nemo
 
-export diffEq,jade_ode,acb_ode,arb_ode,monodromy,powerSeries,setPolynomial!,setInitialValues,acb_ode_legendre,acb_ode_bessel,acb_ode_hypgeom
+export diffOp,jade_ode,acb_ode,arb_ode,monodromy,powerSeries,setPolynomial!,acb_ode_legendre,acb_ode_bessel,acb_ode_hypgeom
 
-abstract type diffEq end
+abstract type diffOp end
 
-mutable struct jade_ode{P<:PolyElem} <: diffEq
+mutable struct jade_ode{P<:PolyElem} <: diffOp
     order::Int
     polys::Vector{P}
     odeC::Ptr{Nothing}
@@ -91,7 +91,7 @@ function translateC(ode::acb_ode)
     return A
 end
 
-function deleteC(ode::diffEq)
+function deleteC(ode::diffOp)
     if ode.odeC == C_NULL
         return
     end
@@ -100,19 +100,14 @@ function deleteC(ode::diffEq)
     return
 end
 
-function setInitialValues(ode::acb_ode,poly::acb_poly)
-    if ode.odeC == C_NULL
-        translateC(ode);
-    end
-    ccall((:acb_set_initial,"libcascade"), Cvoid, (Ptr{Nothing},acb_poly), ode.odeC, poly)
-end
-
 function powerSeries(ode::acb_ode,target::acb)
     if ode.odeC == C_NULL
         translateC(ode);
     end
     polyRing = ode.polys[1].parent
-    p =  ccall((:find_power_series_julia,"libcascade"),acb_poly,(Ptr{Nothing},acb,Cint),ode.odeC,target,polyRing.base_ring.prec)
+    p = polyRing(0)
+    q = Ref{acb_poly}(p)
+    p =  ccall((:find_power_series_julia,"libcascade"),acb_poly,(Ref{acb_poly},Ptr{Nothing},acb,Cint),q,ode.odeC,target,polyRing.base_ring.prec)
     return polyRing(p)
 end
 
