@@ -30,40 +30,31 @@ acb_ode_t acb_ode_init_blank(slong degree, slong order)
         return NULL;
     /* Prepare the Differential equation for later use */
     acb_ode_t ODE = flint_malloc(sizeof(acb_ode_struct));
-    if (ODE == NULL) {
-        flint_printf("Initalisation of the differential equation failed. Please try again.\n");
+    if (ODE == NULL)
         return NULL;
-    }
     order(ODE) = order;
     degree(ODE) = degree;
-    ODE->polys = flint_malloc((order(ODE)+1)*sizeof(acb_ptr));
-    for (slong i = 0; i <= order(ODE); i++) {
-        (ODE->polys)[i] = _acb_vec_init(degree(ODE)+1);
-    }
+    ODE->polys = _acb_vec_init((order(ODE)+1)*(degree(ODE)+1));
     return ODE;
 }
 
 acb_ode_t acb_ode_init (acb_poly_t *polys, slong order)
 {
-    /* Prepare the Differential equation for later use */
+    /* Create a differential operator defined by *polys* */
     if (polys == NULL)
         return NULL;
     acb_ode_t ODE = flint_malloc(sizeof(acb_ode_struct));
     if (ODE == NULL)
-    {
-        flint_printf("Initalisation of the differential equation failed. Please try again.\n");
         return NULL;
-    }
     order(ODE) = order;
     if (interpret(polys,ODE) != ORDINARY)
     {
         flint_free(ODE);
         return NULL;
     }
-    ODE->polys = flint_malloc((order(ODE)+1)*sizeof(acb_ptr));
+    ODE->polys = _acb_vec_init((order(ODE)+1)*(degree(ODE)+1));
     for (slong i = 0; i <= order(ODE); i++)
     {
-        diff_eq_poly(ODE,i) = _acb_vec_init(degree(ODE)+1);
         if (polys[i] == NULL)
             continue;
         for (slong j = 0; j <= acb_poly_degree(polys[i]); j++)
@@ -77,12 +68,9 @@ acb_ode_t acb_ode_init (acb_poly_t *polys, slong order)
 void acb_ode_clear (acb_ode_t ODE)
 {
     /* Free memory allocated for ODE*/
-    if (ODE == NULL) return;
-    for (int i = 0; i <= order(ODE); i++)
-    {
-        _acb_vec_clear((ODE->polys)[i],degree(ODE)+1);
-    }
-    flint_free(ODE->polys);
+    if (ODE == NULL)
+        return;
+    _acb_vec_clear(diff_eq_poly(ODE,0),(order(ODE)+1)*(degree(ODE)+1));
     flint_free(ODE);
     return;
 }
@@ -91,26 +79,23 @@ acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in)
 {
     /* Copy data from ODE_in to an existing ODE structure or create a new one */
     if (ODE_out == NULL)
-    {
-        ODE_out = flint_malloc(sizeof(acb_ode_struct));
-        if (ODE_out == NULL)
-        {
-            flint_printf("Initalisation of the differential equation failed. Please try again.\n");
-            return NULL;
-        }
-        order(ODE_out) = order(ODE_in);
-        degree(ODE_out) = degree(ODE_in);
-        ODE_out->polys = flint_malloc((order(ODE_out)+1)*sizeof(acb_ptr));
-        for (slong i = 0; i <= order(ODE_out); i++)
-        {
-            (ODE_out->polys)[i] = _acb_vec_init(degree(ODE_out)+1);
-        }
-    }
-    for (slong i = 0; i <= order(ODE_out); i++)
-    {
-        _acb_vec_set(diff_eq_poly(ODE_out,i),diff_eq_poly(ODE_in,i),degree(ODE_out)+1);
-    }
+        ODE_out = acb_ode_init_blank(degree(ODE_in),order(ODE_in));
+        
+    _acb_vec_set(diff_eq_poly(ODE_out,0),diff_eq_poly(ODE_in,0),(order(ODE_in)+1)*(degree(ODE_in)+1));
     return ODE_out;
+}
+
+void acb_ode_set_poly (acb_ode_t ODE, acb_poly_t poly, slong index)
+{
+	if (!ODE || !poly)
+		return;
+	else if (index < 0 || index > order(ODE)+1)
+		return;
+	slong len = acb_poly_length(poly);
+	if (len > degree(ODE)+1)
+        len = degree(ODE)+1;	/* Automatically truncates */
+	_acb_vec_set(diff_eq_poly(ODE,index),acb_poly_get_coeff_ptr(poly,0),len);
+	return;
 }
 
 /* I/O */

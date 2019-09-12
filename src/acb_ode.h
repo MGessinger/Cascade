@@ -9,13 +9,13 @@
 
 #define degree(ODE) ((ODE)->degree)
 #define order(ODE) ((ODE)->order)
-#define diff_eq_coeff(ODE,i,j) ((ODE)->polys[i] + (j))
-#define diff_eq_poly(ODE,i) ((ODE)->polys[i])
+#define diff_eq_poly(ODE,i) (((ODE)->polys) + (i)*(degree(ODE)+1))
+#define diff_eq_coeff(ODE,i,j) (diff_eq_poly(ODE,i) + (j))
 
 typedef struct acb_ode_struct {
+    acb_ptr polys;
     slong order;
     slong degree;
-    acb_struct **polys;
 } acb_ode_struct;
 
 typedef acb_ode_struct* acb_ode_t;
