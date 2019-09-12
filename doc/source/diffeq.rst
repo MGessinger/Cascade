@@ -3,7 +3,7 @@
 **acb_ode.h** -- Complex Differential Equations
 ========================================================================
 
-An :type:`acb_ode_t` represents an ordinary, linear differential equation with complex polynomial coefficients and error bounds. The polynomials are implemented as an array of type :type:`acb_struct`. The order of the differential equation as well as the polynomial degrees are tracked internally and need no further care by the user.
+An :type:`acb_ode_t` represents an ordinary, linear differential operator with complex polynomial coefficients and error bounds. The polynomials are implemented as an array of type :type:`acb_struct`. The order of the differential equation as well as the polynomial degrees are tracked internally and need no further care by the user.
 
 Types, macros and constants
 ------------------------------
@@ -11,7 +11,7 @@ Types, macros and constants
 
 .. type:: acb_ode_t
 
-    Contains a pointer to an array of the coefficients, the maximum degree of all the polynomials, the order of the ODE and a pointer to an `acb_poly` containing a power series solution.
+    Contains a pointer to an array of the coefficients, the maximum degree of all the polynomials and the order of the ODE.
 
     An `acb_ode_t` is defined as a pointer of type `acb_ode_struct`, permitting an `acb_ode_t` to be passed by reference.
 
@@ -38,9 +38,9 @@ Memory management
 
     Returns a pointer of type `acb_ode_t`, which contains space for *order+1* polynomials of length no more than *degree+1*.
 
-.. function:: acb_ode_t acb_ode_init (acb_poly_t *polys, acb_poly_t initial, slong order)
+.. function:: acb_ode_t acb_ode_init (acb_poly_t *polys, slong order)
 
-    Returns a pointer of type `acb_ode_t`, which has been initialized to *polys*. The internal power series is set to *initial*. *initial* can be *NULL*.
+    Returns a pointer of type `acb_ode_t`, which has been initialized to contain *polys*.
 
 .. function:: void acb_ode_clear (acb_ode_t ODE)
 
@@ -69,7 +69,7 @@ Conversions
 
 .. function:: acb_ode_shift(acb_ode_t ODE_out, acb_ode_t ODE_in, acb_t a, slong bits)
 
-    Transform the origin of *ODE_in* to *a* and store the result in ODE_out. The power series solution of *ODE_in* is not transformed.
+    Transform the origin of *ODE_in* to *a* and store the result in ODE_out.
 
 Input and Output
 ------------------------------------------------------------------------
@@ -78,9 +78,12 @@ Input and Output
 
     Reads a differential equation from the provided file. The formatting for the *n-th* summand is *yn\*(a0,a1,a2,...)* where *a0* are complex numbers in the form *an = x +yj* (notice the space before the *+*). Example:
 
-	.. math::
-	    y2*(1,2,1) + y0*(1 +3j)
+    .. math::
+        y2*(1,2,1) + y0*(1 +3j)
+
+    .. note::
+        This function was only implemented for testing purposes. However it is considered unsafe and might disappear at any time. It is strongly recommended to use :ref:`Jade` to read from a file.
 
 .. function:: void acb_ode_dump (acb_ode_t ODE, char* file)
 
-    Dumps the data stored in the `acb_ode_struct` into *file*. To print to *stdout*, set *file = NULL*.
+    Dumps the data stored in the `acb_ode_struct` into *file*. If *file == NULL*, the output will be written to *stdout*.

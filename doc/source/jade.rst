@@ -4,7 +4,7 @@
 **Jade** - the Julia interface to Arbitrary Precision Differential Equations
 ====================================================================================
 
-Jade provides an interactive interface to Cascade, which can be used from Julia's REPL. It uses Nemo_ to store variables of type :type:`acb` in Julia, which will then be translated to a C-style struct whenever needed. All memory management will be performed automatically, but you can manually create or delete the C-struct if you need to.
+Jade provides a wrapper for Cascade, which can be used from Julia's REPL. It uses Nemo_ to store variables of type :type:`acb` in Julia, which will then be translated to a C-style struct whenever needed. All memory management will be performed automatically, but the C-struct can be created and destroyed if absolutely necessary, however this is strongly discouraged.
 
 In the following, all functions are listed with their full name. However most functions are exported from Jade and can therefore be called without the *Jade.*-prefix.
 
@@ -13,7 +13,7 @@ Types and Aliases
 
 .. type:: jade_ode{P<:PolyElem}
 
-    Contains an array of type *P*, the order of the differential equation and a pointer of type *nothing*. If *P == acb_poly*, then the latter is used to store a pointer to an `acb_ode_t` created by Cascade.
+    Contains an array of type *P*, the order of the differential equation and a pointer of type *Nothing*. If *P == acb_poly*, then the latter is used to store a pointer to an `acb_ode_t` created by Cascade.
 
 .. warning::
 
@@ -27,9 +27,9 @@ Types and Aliases
 
 	This is an alias for jade_ode{acb_poly}.
 
-.. type:: diffEq
+.. type:: diffOp
 
-	An abstract type, acting as a parent type for all jade_ode{P}-types, i.e. jade_ode{P <:PolyElem} <: diffEq.
+	An abstract type, acting as a parent type for all jade_ode{P}-types, i.e. jade_ode{P <:PolyElem} <: diffOp.
 
 Memory Management
 --------------------
@@ -42,6 +42,8 @@ Memory Management
 
     An `acb_ode_t` is created by Cascade and a pointer to it is stored in *ode*. This function is not exported because it should not be called manually!
 
+    Currently there is no method for parsing other diffOp types other than acb_ode to an acb_ode_t structure.
+
 .. function:: Jade.deleteC(ode::acb_ode)
 
     The C-style struct stored in *ode* is deallocated by Cascade. This function is not exported because it usually doesn't need to be called manually!
@@ -53,15 +55,23 @@ Cascade contains a few predefined differential equations. Jade can access those 
 
 .. function:: Jade.acb_ode_legendre(R::AcbPolyRing, n::Integer)
 
-    Creates an `acb_ode` initialized to Legendre's equation. This is implemented by calling :func:`acb_ode_legendre` through Cascade.
+    Creates an `acb_ode` initialized to Legendre's equation. This automatically calls :func:`acb_ode_legendre` through Cascade.
 
 .. function:: Jade.acb_ode_bessel(R::AcbPolyRing,nu::acb)
 
-    Creates an `acb_ode` initialized to Bessel's equation. This is implemented by calling :func:`acb_ode_bessel` through Cascade.
+    Creates an `acb_ode` initialized to Bessel's equation. This automatically calls :func:`acb_ode_bessel` through Cascade.
 
 .. function:: Jade.acb_ode_hypgeom(R::AcbPolyRing, a::acb, b::acb, c::acb)
 
-    Creates an `acb_ode` initialized to Euler's hypergeometric equation. This is implemented by calling :func:`acb_ode_hypgeom` through Cascade.
+    Creates an `acb_ode` initialized to Euler's hypergeometric equation. This automatically calls :func:`acb_ode_hypgeom` through Cascade.
+
+Arithmetic
+--------------
+
+Simple arithmetic has been implemented to work with varibles of type *diffOp*. Addition and subtraction as well as multiplication and division by a scalar are implemented as method extensions to the +,-,*,/ functions of the Base package.
+Due to limitations in Nemo's type promotion (e.g. from *fmpz* to *acb*), multiplication might fail if the types are incomptible. However all Julia base types are fully supported.
+
+Because a variable of type :type:`jade_ode` represents a differential operator, they are callable on any polynomial, that supports Nemo's *derivative* function.
 
 Solving ODEs
 --------------------
@@ -70,15 +80,10 @@ Solving ODEs
 
     Replace the polynomial at *index* by *polynomial*. If *ode* has already been translated before, the data will be cleared first. *order* will be adjusted accordingly. Remember that Julia counts from 1!
 
-.. function:: Jade.setInitialValues(ode::acb_ode,poly::acb_poly)
+.. function:: Jade.powerSeries(ode::acb_ode,p::acb_poly,n::Integer)
 
-    Store *poly* in the power series of the C-struct of *ode*. If the struct has not been allocated before, the function will perform that automatically.
-
-.. function:: Jade.powerSeries(ode::acb_ode,target::acb)
-
-    Copute a power series solution of *ode*, which converges at *target*, through Cascade. The precision is automatically determined from the polynomials in *ode*.
+    Copute a power series solution of *ode*, which converges when evaluated at *target*, through Cascade. The precision is automatically determined from the polynomials in *ode*. The inital values are taken from *p*, which also stores the result.
 
 .. function:: Jade.monodromy(ode::acb_ode,z0=0)
 
     Compute the monodromy matrix of *ode* around *z0* through Cascade. The value of *z0* defaults to zero.
-
