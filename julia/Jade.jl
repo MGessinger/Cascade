@@ -20,7 +20,7 @@ function __init__()
     print("  |  _  __  ,__ \n")
     print("  | |_| | \\ |__ \n")
     print("\\_/ | | |_/ |__ \n")
-    print("\nThis is Jade v.0.11, an interface to Cascade,\n\n")
+    print("\nThis is Jade v.1.0, an interface to Cascade,\n\n")
     print("The C-Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations!\n")
 end
 
