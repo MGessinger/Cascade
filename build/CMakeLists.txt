@@ -6,8 +6,6 @@ set(CascadeSrc
     ../src/cascade.h
     ../src/acb_ode.c
     ../src/acb_ode.h
-    ../src/juliaInterface.c
-    ../src/juliaInterface.h
     ../src/examples.c
 )
 

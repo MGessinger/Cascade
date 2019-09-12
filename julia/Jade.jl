@@ -83,9 +83,11 @@ function translateC(ode::acb_ode)
             deg = degree(p)
         end
     end
-    A = ccall( (:acb_ode_init_blank,"libcascade"), Ptr{Nothing}, (Cint,Cint), deg, ode.order)
+    A = ccall((:acb_ode_init_blank,"libcascade"), Ptr{Nothing}, (Cint,Cint), deg, ode.order)
+    V = Vector{acb}(undef,0)
     for i = 1:ode.order+1
-        ccall( (:acb_ode_set_poly,"libcascade"), Cint, (Ptr{Nothing},acb_poly,Cint), A, ode.polys[i], i-1)
+        q = Ref{acb_poly}(ode.polys[i])
+        ccall((:acb_ode_set_poly,:libcascade),Cvoid,(Ptr{Nothing},Ref{acb_poly},Cint),A,q,i-1)
     end
     ode.odeC = A
     return A
@@ -100,14 +102,16 @@ function deleteC(ode::diffOp)
     return
 end
 
-function powerSeries(ode::acb_ode,target::acb)
+function powerSeries(ode::acb_ode,p::acb_poly,n::Integer)
+    if n <= degree(p)
+        return p
+    end
     if ode.odeC == C_NULL
         translateC(ode);
     end
-    polyRing = ode.polys[1].parent
-    p = polyRing(0)
+    polyRing = p.parent
     q = Ref{acb_poly}(p)
-    p =  ccall((:find_power_series_julia,"libcascade"),acb_poly,(Ref{acb_poly},Ptr{Nothing},acb,Cint),q,ode.odeC,target,polyRing.base_ring.prec)
+    ccall((:find_power_series,"libcascade"),Cvoid,(Ref{acb_poly},Ptr{Nothing},Cint,Cint),q,ode.odeC,n,polyRing.base_ring.prec)
     return polyRing(p)
 end
 

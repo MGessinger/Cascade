@@ -7,6 +7,17 @@ function Base.show(io::IO, A::diffOp)
     end
 end
 
+function (a::jade_ode)(p::PolyElem)
+    q = p
+    r = zero(p)
+    for i = 1:a.order+1
+        r += q*a.polys[i]
+        q = derivative(q)
+    end
+    return r
+end
+
+
 function ==(a::diffOp,b::diffOp)
     if (a.order != b.order)
         return false
