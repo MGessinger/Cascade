@@ -126,9 +126,6 @@ slong find_power_series(acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong 
                 continue;
             acb_addmul(newCoeff,acb_poly_get_coeff_ptr(res,oldIndex),temp,bits);
         }
-        if (acb_is_zero(newCoeff))
-            continue;
-
         /* Divide by the coefficient of a_b where b = newIndex + order(ODE) */
         fmpz_rfac_uiui(fac,newIndex-order(ODE)+1,order(ODE));
         acb_mul_fmpz(temp,diff_eq_coeff(ODE,order(ODE),0),fac,bits);
@@ -176,7 +173,6 @@ void analytic_continuation (acb_poly_t res, acb_ode_t ODE, acb_srcptr path,
             break;
         }
         acb_poly_taylor_shift(res,res,a,bits);
-        acb_poly_truncate(res,order(ODE)+1);
     }
     acb_ode_clear(ODE_shift);
     acb_clear(a);
