@@ -2,7 +2,7 @@ module Jade
 
 using Nemo
 
-export diffOp,jade_ode,acb_ode,arb_ode,monodromy,powerSeries,setPolynomial!,acb_ode_legendre,acb_ode_bessel,acb_ode_hypgeom
+export diffOp,jade_ode,acb_ode,arb_ode,monodromy,powerSeries,setPolynomial!,jade_ode_legendre,acb_ode_bessel,acb_ode_hypgeom
 
 abstract type diffOp end
 
@@ -41,6 +41,10 @@ function jade_ode{P}(polys::Vector{P}) where P <: PolyElem
     return A
 end
 
+function jade_ode(polys::Vector{P}) where P <: PolyElem
+    return jade_ode{P}(polys)
+end
+
 function setPolynomial!(ode::jade_ode{T}, index::Integer, polynomial::T) where T <: PolyElem
     if ode.odeC != C_NULL
         deleteC(ode)
@@ -69,7 +73,7 @@ function setPolynomial!(ode::jade_ode{T}, index::Integer, polynomial::T) where T
     return
 end
 
-function translateC(ode::acb_ode)
+function translateC(ode::diffOp)
     if ode.odeC != C_NULL
         deleteC(ode)
     end
@@ -84,9 +88,8 @@ function translateC(ode::acb_ode)
         end
     end
     A = ccall((:acb_ode_init_blank,"libcascade"), Ptr{Nothing}, (Cint,Cint), deg, ode.order)
-    V = Vector{acb}(undef,0)
     for i = 1:ode.order+1
-        q = Ref{acb_poly}(ode.polys[i])
+        q = Ref{acb_poly}(acb_poly(ode.polys[i],0))
         ccall((:acb_ode_set_poly,:libcascade),Cvoid,(Ptr{Nothing},Ref{acb_poly},Cint),A,q,i-1)
     end
     ode.odeC = A
@@ -115,23 +118,27 @@ function powerSeries(ode::acb_ode,p::acb_poly,n::Integer)
     return polyRing(p)
 end
 
-function monodromy(ode::acb_ode,z0=0)
+function monodromy(ode::diffOp,z0=0)
     if ode.odeC == C_NULL
         translateC(ode);
     end
-    Ring = ode.polys[1].parent.base_ring
-    S = MatrixSpace(Ring,ode.order,ode.order)
+    if isa(ode,acb_ode) || isa(ode,arb_ode)
+        R = ode.polys[1].parent.base_ring
+    else
+        print("Plese enter a precision value: ")
+        R = ComplexField(parse(Int,readline()))
+    end
+    S = MatrixSpace(R,ode.order,ode.order)
     mono = S(1)
     M = Ref{acb_mat}(mono)
-    Z = Ref{acb}(Ring(z0))
-    ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ref{acb_mat},Ptr{Nothing},Ref{acb},Cint),M,ode.odeC,Z,Ring.prec)
-    mono.base_ring = Ring
-    deleteC(ode)
+    Z = Ref{acb}(R(z0))
+    ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ref{acb_mat},Ptr{Nothing},Ref{acb},Cint),M,ode.odeC,Z,R.prec)
+    mono.base_ring = R
     return mono
 end
 
-function acb_ode_legendre(R::AcbPolyRing,n::Integer)
-    ode = acb_ode([R(n*(n+1)),R([0,-2]),R([1,0,-1])])
+function jade_ode_legendre(R::PolyRing,n::Integer)
+    ode = jade_ode([R(n*(n+1)),R([0,-2]),R([1,0,-1])])
     ode.odeC = ccall((:acb_ode_legendre,:libcascade),Ptr{Nothing},(Cint,),n)
     return ode
 end
