@@ -7,14 +7,13 @@ Author: Matthias Gessinger
 
 ## Installation
 
-This library can be build from source as a shared object library through cmake. To build the library, open a terminal in the ./build/ directory and run the commands
+This library can be build from source as a shared object library through CMake. For a default installation, simply use the command
 
 ```bash
-cmake ./
-make
-make install
+bash install.sh
 ```
-Depending on your system, *make install* might have to be run with root priviliges.
+to run the usual commands for executing CMake. If however any custom flags are desired, CMake will have to be run manually.
+Depending on your system, the installation may have to be run with root privileges to be ablot to put all the files in the necessary places.
 
 ## Jade
 
@@ -48,6 +47,7 @@ The output of the above program should look something like this:
 Equivalently we can run the above program through Cascade directly. The code to perform the same computation as above, looks like this:
 ```C
 #include <cascade.h>
+#include <acb_poly.h>
 
 int main (int argc, char **argv)
 {
