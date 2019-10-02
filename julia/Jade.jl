@@ -89,7 +89,7 @@ function translateC(ode::diffOp)
     end
     A = ccall((:acb_ode_init_blank,"libcascade"), Ptr{Nothing}, (Cint,Cint), deg, ode.order)
     for i = 1:ode.order+1
-        q = Ref{acb_poly}(acb_poly(ode.polys[i],0))
+        q = Ref{acb_poly}(acb_poly(ode.polys[i],1))
         ccall((:acb_ode_set_poly,:libcascade),Cvoid,(Ptr{Nothing},Ref{acb_poly},Cint),A,q,i-1)
     end
     ode.odeC = A
@@ -105,34 +105,54 @@ function deleteC(ode::diffOp)
     return
 end
 
-function powerSeries(ode::acb_ode,p::acb_poly,n::Integer)
+function powerSeries(ode::jade_ode{T},p::Union{acb_poly,arb_poly},n::Integer) where T <: Union{acb_poly,arb_poly}
     if n <= degree(p)
         return p
     end
     if ode.odeC == C_NULL
-        translateC(ode);
+        translateC(ode)
     end
-    polyRing = p.parent
-    q = Ref{acb_poly}(p)
-    ccall((:find_power_series,"libcascade"),Cvoid,(Ref{acb_poly},Ptr{Nothing},Cint,Cint),q,ode.odeC,n,polyRing.base_ring.prec)
-    return polyRing(p)
+    R = ode.polys[1].parent
+    prec = R.base_ring.prec
+    p2 = acb_poly(p,prec)
+    q = Ref{acb_poly}(p2)
+    ccall((:find_power_series,"libcascade"),Cvoid,(Ref{acb_poly},Ptr{Nothing},Cint,Cint),q,ode.odeC,n,prec)
+    if isa(ode,acb_ode)
+        return R(p2)
+    else
+        R2 = AcbPolyRing(ComplexField(prec),:z)
+        p2 = R2(p2)
+        return R([real(coeff(p2,i)) for i = 0:degree(p2)])
+    end
 end
 
-function monodromy(ode::diffOp,z0=0)
+function monodromy(ode::acb_ode,z0=0)
     if ode.odeC == C_NULL
-        translateC(ode);
+        translateC(ode)
     end
-    if isa(ode,acb_ode) || isa(ode,arb_ode)
-        R = ode.polys[1].parent.base_ring
-    else
-        print("Plese enter a precision value: ")
-        R = ComplexField(parse(Int,readline()))
-    end
+    R = ode.polys[1].parent
     S = MatrixSpace(R,ode.order,ode.order)
     mono = S(1)
     M = Ref{acb_mat}(mono)
     Z = Ref{acb}(R(z0))
-    ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ref{acb_mat},Ptr{Nothing},Ref{acb},Cint),M,ode.odeC,Z,R.prec)
+    ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ref{acb_mat},Ptr{Nothing},Ref{acb},Cint),M,ode.odeC,Z,prec)
+    mono.base_ring = R
+    return mono
+end
+
+function monodromy(ode::jade_ode,z0=0)
+    # This function is only called iff ode is *not* an acb_ode
+    if ode.odeC == C_NULL
+        translateC(ode)
+    end
+    print("Please enter a precision value manually: ")
+    prec = parse(Int,readline())
+    R = ComplexField(prec)
+    S = MatrixSpace(R,ode.order,ode.order)
+    mono = S(1)
+    M = Ref{acb_mat}(mono)
+    Z = Ref{acb}(R(z0))
+    ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ref{acb_mat},Ptr{Nothing},Ref{acb},Cint),M,ode.odeC,Z,prec)
     mono.base_ring = R
     return mono
 end
