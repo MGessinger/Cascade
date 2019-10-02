@@ -22,7 +22,6 @@ endif(MSVC)
 set_target_properties(cascade PROPERTIES PUBLIC_HEADER "src/cascade.h;src/acb_ode.h")
 
 install(TARGETS cascade
-     RUNTIME DESTINATION bin COMPONENT runtime
      LIBRARY DESTINATION lib COMPONENT devel
      PUBLIC_HEADER DESTINATION include COMPONENT devel
 )
