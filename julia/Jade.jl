@@ -87,9 +87,15 @@ function translateC(ode::diffOp)
             deg = degree(p)
         end
     end
+    prec = 64
+    try
+        prec = ode.polys[i].parent.base_ring.prec
+    catch
+        println("The input is exact. Assuming a precision of 64 bits")
+    end
     A = ccall((:acb_ode_init_blank,"libcascade"), Ptr{Nothing}, (Cint,Cint), deg, ode.order)
     for i = 1:ode.order+1
-        q = Ref{acb_poly}(acb_poly(ode.polys[i],1))
+        q = Ref{acb_poly}(acb_poly(ode.polys[i],prec))
         ccall((:acb_ode_set_poly,:libcascade),Cvoid,(Ptr{Nothing},Ref{acb_poly},Cint),A,q,i-1)
     end
     ode.odeC = A
@@ -117,11 +123,12 @@ function powerSeries(ode::jade_ode{T},p::Union{acb_poly,arb_poly},n::Integer) wh
     p2 = acb_poly(p,prec)
     q = Ref{acb_poly}(p2)
     ccall((:find_power_series,"libcascade"),Cvoid,(Ref{acb_poly},Ptr{Nothing},Cint,Cint),q,ode.odeC,n,prec)
-    if isa(ode,acb_ode)
+    if isa(ode,acb_ode) || isa(p,acb_poly)
         return R(p2)
     else
         R2 = AcbPolyRing(ComplexField(prec),:z)
         p2 = R2(p2)
+        # This is a bit of a hack, because Nemo does not support demotion of strictly real acb_polys
         return R([real(coeff(p2,i)) for i = 0:degree(p2)])
     end
 end
