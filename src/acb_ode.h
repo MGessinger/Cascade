@@ -4,18 +4,15 @@
 #include <acb.h>
 #include <acb_poly.h>
 
-#define INVALID_DATA (-1)
-#define ORDINARY (1)
-
 #define degree(ODE) ((ODE)->degree)
 #define order(ODE) ((ODE)->order)
 #define diff_eq_poly(ODE,i) (((ODE)->polys) + (i)*(degree(ODE)+1))
 #define diff_eq_coeff(ODE,i,j) (diff_eq_poly(ODE,i) + (j))
 
 typedef struct acb_ode_struct {
-    acb_ptr polys;
     slong order;
     slong degree;
+    acb_ptr polys;
 } acb_ode_struct;
 
 typedef acb_ode_struct* acb_ode_t;

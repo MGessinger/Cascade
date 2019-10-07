@@ -5,15 +5,13 @@
 #include <acb_mat.h>
 #include "acb_ode.h"
 
-#define TRUE 1
-
 /* Compute a power series solution to ODE */
 slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong bits);
 slong truncation_order (arb_t eta, arb_t alpha, slong bits);
 
 /* Compute analytic continuation and monodromy */
 void  analytic_continuation (acb_poly_t res, acb_ode_t ODE, acb_srcptr path,
-                            slong len, slong numOfCoeffs, slong bits);
+                             slong len, slong numOfCoeffs, slong bits);
 void  find_monodromy_matrix (acb_mat_t mono, acb_ode_t ODE, acb_t z0, slong bits);
 void  radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong n, slong bits);
 

@@ -9,7 +9,7 @@ static short interpret (acb_poly_t *polys, acb_ode_t ODE)
     while (polys[ord] == NULL || acb_poly_is_zero(polys[ord]))
         ord--;
     if (ord <= 0)
-        return INVALID_DATA;
+        return -1;
     for (slong i = 0; i <= ord; i++)
     {
         if (polys[i] == NULL)
@@ -19,7 +19,7 @@ static short interpret (acb_poly_t *polys, acb_ode_t ODE)
     }
     order(ODE) = ord;
     degree(ODE) = polyMaxDeg;
-    return ORDINARY;
+    return 1;
 }
 
 /* Setup and memory management*/
@@ -47,7 +47,7 @@ acb_ode_t acb_ode_init (acb_poly_t *polys, slong order)
     if (ODE == NULL)
         return NULL;
     order(ODE) = order;
-    if (interpret(polys,ODE) != ORDINARY)
+    if (interpret(polys,ODE) != 1)
     {
         flint_free(ODE);
         return NULL;
@@ -87,15 +87,15 @@ acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in)
 
 void acb_ode_set_poly (acb_ode_t ODE, acb_poly_t poly, slong index)
 {
-	if (!ODE || !poly)
-		return;
-	else if (index < 0 || index > order(ODE)+1)
-		return;
-	slong len = acb_poly_length(poly);
-	if (len > degree(ODE)+1)
-        len = degree(ODE)+1;	/* Automatically truncates */
-	_acb_vec_set(diff_eq_poly(ODE,index),acb_poly_get_coeff_ptr(poly,0),len);
-	return;
+    if (!ODE || !poly)
+        return;
+    else if (index < 0 || index > order(ODE)+1)
+        return;
+    slong len = acb_poly_length(poly);
+    if (len > degree(ODE)+1)
+        len = degree(ODE)+1;    /* Automatically truncates */
+    _acb_vec_set(diff_eq_poly(ODE,index),acb_poly_get_coeff_ptr(poly,0),len);
+    return;
 }
 
 /* I/O */
