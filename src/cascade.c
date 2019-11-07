@@ -81,12 +81,9 @@ slong find_power_series(acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong 
     fmpz_init(fac);
     slong minIndex, newIndex;
     slong polyMin, polyMax;
-    slong offset;
+    slong offset, facStart;
 
-    /* Setting this coefficient to 1 here reduces the number of reallocs drastically.
-     * The index is out of range of the loop on purpose.
-     * By doing this, I can comfortably chop it off in the end every time. */
-    acb_poly_set_coeff_si(res,numOfCoeffs+2,1);
+    acb_poly_fit_length(res,numOfCoeffs);
     /* Negating the constant coefficient of the leading polynomial saves a few cycles later on */
     acb_neg(diff_eq_coeff(ODE,order(ODE),0),diff_eq_coeff(ODE,order(ODE),0));
 
@@ -95,17 +92,20 @@ slong find_power_series(acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong 
         acb_zero(newCoeff);
         minIndex = newIndex - degree(ODE) - order(ODE);
         if (minIndex < 0)
-                minIndex = 0;
+            minIndex = 0;
+        facStart = newIndex - order(ODE);
 
         for (slong oldIndex = newIndex-1; oldIndex >= minIndex; oldIndex--)
         {
+            if (acb_poly_get_coeff_ptr(res,oldIndex) == NULL)
+                continue;
             /* Loop through the polynomials */
             polyMax = oldIndex - minIndex;
             /* No more than order(ODE) terms can contribute: */
             if (polyMax > order(ODE))
                 polyMax = order(ODE);
 
-            offset = oldIndex-newIndex+order(ODE);
+            offset = oldIndex-facStart;
             if (offset <= 0)
             {
                 polyMin = 0;
@@ -114,7 +114,7 @@ slong find_power_series(acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong 
             else
             {
                 polyMin = offset;
-                fmpz_rfac_uiui(fac,newIndex-order(ODE)+1,polyMin);
+                fmpz_rfac_uiui(fac,facStart+1,polyMin);
             }
             acb_mul_fmpz(temp,diff_eq_coeff(ODE,polyMin,polyMin-offset),fac,bits);
             for (slong polyIndex = polyMin; polyIndex < polyMax; polyIndex++)
@@ -127,7 +127,7 @@ slong find_power_series(acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong 
             acb_addmul(newCoeff,acb_poly_get_coeff_ptr(res,oldIndex),temp,bits);
         }
         /* Divide by the coefficient of a_b where b = newIndex + order(ODE) */
-        fmpz_rfac_uiui(fac,newIndex-order(ODE)+1,order(ODE));
+        fmpz_rfac_uiui(fac,facStart+1,order(ODE));
         acb_mul_fmpz(temp,diff_eq_coeff(ODE,order(ODE),0),fac,bits);
         acb_div(newCoeff,newCoeff,temp,bits);
 
@@ -139,7 +139,6 @@ slong find_power_series(acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong 
         }
         acb_poly_set_coeff_acb(res,newIndex,newCoeff);
     }
-    acb_poly_truncate(res,numOfCoeffs+1);
     if (newIndex == 0)
         acb_ode_dump(ODE,"odedump.txt");
 
