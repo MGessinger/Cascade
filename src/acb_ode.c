@@ -24,7 +24,7 @@ static short interpret (acb_poly_t *polys, acb_ode_t ODE)
 
 /* Setup and memory management*/
 
-acb_ode_t acb_ode_init_blank(slong degree, slong order)
+acb_ode_t acb_ode_init_blank (slong degree, slong order)
 {
 	if (degree < 0 || order <= 0)
 		return NULL;
@@ -100,7 +100,7 @@ void acb_ode_set_poly (acb_ode_t ODE, acb_poly_t poly, slong index)
 
 /* I/O */
 
-acb_ode_t acb_ode_fread(const char *fileName, ulong maxOrder, slong bits)
+acb_ode_t acb_ode_fread (const char *fileName, ulong maxOrder, slong bits)
 {
 	/* Read an ODE from a file */
 	if (maxOrder == 0)
@@ -150,7 +150,7 @@ acb_ode_t acb_ode_fread(const char *fileName, ulong maxOrder, slong bits)
 	return ODE;
 }
 
-void acb_ode_dump(acb_ode_t ODE, char *file)
+void acb_ode_dump (acb_ode_t ODE, char *file)
 {
 	/* Dumps the ODE to file. If file is NULL, dump to stdout */
 	if (ODE == NULL)
@@ -228,7 +228,7 @@ slong acb_ode_reduce (acb_ode_t ODE)
 
 /* This function is so terrible, you probably don't want to use it. Ever. */
 
-void parsePoly(acb_poly_t polyOut, const char *polyString, const slong strLength, slong bits)
+void parsePoly (acb_poly_t polyOut, const char *polyString, const slong strLength, slong bits)
 {
 	if (strLength == 0 || polyString[0] == '\0')
 	{

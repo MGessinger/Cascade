@@ -1,6 +1,6 @@
 #include "acb_ode.h"
 
-acb_ode_t acb_ode_legendre(ulong n)
+acb_ode_t acb_ode_legendre (ulong n)
 {
 	acb_poly_t* polys = flint_malloc(3*sizeof(acb_poly_t));
 	if (polys == NULL)
@@ -20,7 +20,7 @@ acb_ode_t acb_ode_legendre(ulong n)
 	return ODE;
 }
 
-acb_ode_t acb_ode_bessel(acb_t nu, slong bits)
+acb_ode_t acb_ode_bessel (acb_t nu, slong bits)
 {
 	acb_poly_t* polys = flint_malloc(3*sizeof(acb_poly_t));
 	if (polys == NULL)
@@ -41,7 +41,7 @@ acb_ode_t acb_ode_bessel(acb_t nu, slong bits)
 	return ODE;
 }
 
-acb_ode_t acb_ode_hypgeom(acb_t a, acb_t b, acb_t c, slong bits)
+acb_ode_t acb_ode_hypgeom (acb_t a, acb_t b, acb_t c, slong bits)
 {
 	acb_t temp;
 	acb_init(temp);

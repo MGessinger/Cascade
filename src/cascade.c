@@ -40,7 +40,7 @@ slong truncation_order (arb_t eta, arb_t alpha, slong bits)
 	return n;
 }
 
-void acb_poly_graeffe_transform(acb_ptr dest, acb_srcptr src, slong len, slong bits)
+void acb_poly_graeffe_transform (acb_ptr dest, acb_srcptr src, slong len, slong bits)
 {
 	/* Computes the Graeffe transform of src. In- and output can be aliased. */
 	slong q = (len-1)/2;
@@ -64,7 +64,7 @@ void acb_poly_graeffe_transform(acb_ptr dest, acb_srcptr src, slong len, slong b
 	return;
 }
 
-slong find_power_series(acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong bits)
+slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong bits)
 {
 	/* Iteratively compute the first numOfCoeffs coefficients of the power series solution of the ODE around zero */
 	if (!ODE || !res)
@@ -237,7 +237,7 @@ void find_monodromy_matrix (acb_mat_t mono, acb_ode_t ODE, acb_t z0, slong bits)
 	return;
 }
 
-void radiusOfConvergence(arb_t radOfConv, acb_ode_t ODE, slong n, slong bits)
+void radiusOfConvergence (arb_t radOfConv, acb_ode_t ODE, slong n, slong bits)
 {
 	/* Find the radius of convergence of the power series expansion */
 	if (ODE == NULL)
