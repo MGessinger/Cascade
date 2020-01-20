@@ -10,9 +10,9 @@
 #define diff_eq_coeff(ODE,i,j) (diff_eq_poly(ODE,i) + (j))
 
 typedef struct acb_ode_struct {
-    slong order;
-    slong degree;
-    acb_ptr polys;
+	slong order;
+	slong degree;
+	acb_ptr polys;
 } acb_ode_struct;
 
 typedef acb_ode_struct* acb_ode_t;
