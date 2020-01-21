@@ -64,9 +64,6 @@ Conversions
 
     Finds the highest power of *z* that divides every polynomial and uses that to simplify the equation. The return value contains the exponent of z, that the equation was divided by.
 
-.. caution::
-    The degree(ODE) is adjusted internally, but no heap (de-)allocation is performed. Therefore the return value of `acb_ode_reduce` must be stored in all cases and finally, before using `acb_ode_clear`, added back onto degree(ODE) to avoid memory leaks!
-
 .. function:: acb_ode_shift(acb_ode_t ODE_out, acb_ode_t ODE_in, acb_t a, slong bits)
 
     Transform the origin of *ODE_in* to *a* and store the result in ODE_out.

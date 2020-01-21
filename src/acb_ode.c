@@ -217,12 +217,15 @@ slong acb_ode_reduce (acb_ode_t ODE)
 				break;
 			}
 	}
-	if (reduced != 0)
-	{
-		for (slong i = 0; i<= order(ODE); i++)
-			_acb_poly_shift_right(diff_eq_poly(ODE,i),diff_eq_poly(ODE,i),degree(ODE)+1,reduced);
-	}
+	if (reduced == 0)
+		return 0;
+	acb_ode_t newODE = acb_ode_init_blank(degree(ODE)-reduced,order(ODE));
+	for (slong i = 0; i<= order(ODE); i++)
+		_acb_poly_shift_right(diff_eq_poly(newODE,i),diff_eq_poly(ODE,i),degree(ODE)+1,reduced);
+	free(ODE->polys);
+	ODE->polys = newODE->polys;
 	degree(ODE) -= reduced;
+	free(newODE);
 	return reduced;
 }
 
