@@ -55,9 +55,8 @@ void acb_poly_graeffe_transform (acb_ptr dest, acb_srcptr src, slong len, slong 
 	}
 	_acb_poly_mul(dest,po,q+1,po,q+1,bits);
 	_acb_poly_shift_left(dest,dest,len-1,1);
-	_acb_vec_neg(dest,dest,len);
 	_acb_poly_mul(po,pe,q+1,pe,q+1,bits);
-	_acb_vec_add(dest,dest,po,len,bits);
+	_acb_vec_sub(dest,po,dest,len,bits);
 
 	_acb_vec_clear(pe,q+1);
 	_acb_vec_clear(po,len);
@@ -157,11 +156,9 @@ void analytic_continuation (acb_poly_t res, acb_ode_t ODE, acb_srcptr path,
 	/* Evaluate a solution along the given piecewise linear path */
 	acb_t a; acb_init(a);
 	acb_ode_t ODE_shift = acb_ode_init_blank(degree(ODE),order(ODE));
-	slong time = 0;
-	for (; time+1 < len; time++)
+	for (slong time = 0; time+1 < len; time++)
 	{
 		acb_ode_shift(ODE_shift,ODE,path+time,bits);
-		acb_sub(a,path+time+1,path+time,bits);
 		if (find_power_series(res,ODE_shift,numOfCoeffs,bits) == 0)
 		{
 			flint_printf("The power series expansion did not converge from ");
@@ -171,6 +168,7 @@ void analytic_continuation (acb_poly_t res, acb_ode_t ODE, acb_srcptr path,
 			flint_printf(" where t = %w.\n",time);
 			break;
 		}
+		acb_sub(a,path+time+1,path+time,bits);
 		acb_poly_taylor_shift(res,res,a,bits);
 	}
 	acb_ode_clear(ODE_shift);

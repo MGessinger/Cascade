@@ -142,7 +142,7 @@ acb_ode_t acb_ode_fread (const char *fileName, ulong maxOrder, slong bits)
 			parsePoly(polys[derivative],poly,length,bits);
 	} while (fscanf(input,"%*[^a-z]%*c%lu*(",&derivative) != EOF);
 	fclose(input);
-	acb_ode_t ODE =  acb_ode_init(polys,numberOfPols);
+	acb_ode_t ODE = acb_ode_init(polys,numberOfPols);
 	for (ulong i = 0; i <= numberOfPols; i++)
 		acb_poly_clear(polys[i]);
 	flint_free(polys);

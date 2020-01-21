@@ -12,7 +12,7 @@ Cascade's documentation
 ..  toctree::
     :maxdepth: 2
 
-    diffeq.rst
+    acb_ode.rst
     cascade.rst
 
 Jade's documentation
