@@ -24,6 +24,8 @@ function __init__()
 	print("The C-Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations!\n")
 end
 
+# Constructors
+
 function jade_ode{P}(polys::Vector{P}) where P <: PolyElem
 	if (length(polys) == 0)
 		return
@@ -44,6 +46,8 @@ end
 function jade_ode(polys::Vector{P}) where P <: PolyElem
 	return jade_ode{P}(polys)
 end
+
+# In-Place Modifications
 
 function setPolynomial!(ode::jade_ode{T}, index::Integer, polynomial::T) where T <: PolyElem
 	if ode.odeC != C_NULL
@@ -72,6 +76,8 @@ function setPolynomial!(ode::jade_ode{T}, index::Integer, polynomial::T) where T
 	end
 	return
 end
+
+# C-interface
 
 function translateC(ode::diffOp)
 	if ode.odeC != C_NULL
@@ -110,6 +116,8 @@ function deleteC(ode::diffOp)
 	ode.odeC = C_NULL
 	return
 end
+
+# Cacsade interface
 
 function powerSeries(ode::jade_ode{T},p::Union{acb_poly,arb_poly},n::Integer) where T <: Union{acb_poly,arb_poly}
 	if n <= degree(p)
