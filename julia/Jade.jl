@@ -145,12 +145,12 @@ function monodromy(ode::acb_ode,z0=0)
 	if ode.odeC == C_NULL
 		translateC(ode)
 	end
-	R = ode.polys[1].parent
+	R = ode.polys[1].parent.base_ring
 	S = MatrixSpace(R,ode.order,ode.order)
 	mono = S(1)
 	M = Ref{acb_mat}(mono)
 	Z = Ref{acb}(R(z0))
-	ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ref{acb_mat},Ptr{Nothing},Ref{acb},Cint),M,ode.odeC,Z,prec)
+	ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ref{acb_mat},Ptr{Nothing},Ref{acb},Cint),M,ode.odeC,Z,R.prec)
 	mono.base_ring = R
 	return mono
 end
@@ -160,14 +160,13 @@ function monodromy(ode::jade_ode,z0=0)
 	if ode.odeC == C_NULL
 		translateC(ode)
 	end
-	print("Please enter a precision value manually: ")
-	prec = parse(Int,readline())
-	R = ComplexField(prec)
+	@warn "Monodromy matrices cannot in general be computed exactly, even for integer initial conditions!\nUsing an internal precision of 64 bits!"
+	R = ComplexField(64)
 	S = MatrixSpace(R,ode.order,ode.order)
 	mono = S(1)
 	M = Ref{acb_mat}(mono)
 	Z = Ref{acb}(R(z0))
-	ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ref{acb_mat},Ptr{Nothing},Ref{acb},Cint),M,ode.odeC,Z,prec)
+	ccall((:find_monodromy_matrix,"libcascade"),Cvoid,(Ref{acb_mat},Ptr{Nothing},Ref{acb},Cint),M,ode.odeC,Z,64)
 	mono.base_ring = R
 	return mono
 end
