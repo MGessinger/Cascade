@@ -43,22 +43,22 @@ slong truncation_order (arb_t eta, arb_t alpha, slong bits)
 void acb_poly_graeffe_transform (acb_ptr dest, acb_srcptr src, slong len, slong bits)
 {
 	/* Computes the Graeffe transform of src. In- and output can be aliased. */
-	slong q = (len-1)/2;
-	acb_ptr pe = _acb_vec_init(q+1);
+	slong q = (len-1)/2+1;
+	acb_ptr pe = _acb_vec_init(q);
 	acb_ptr po = _acb_vec_init(len);
-	for (slong i = 0; i < len; i++)
+	for (slong i = (len+1)/2-1; i >= 0; i--)
 	{
-		if (i%2 == 0)
-			acb_set(pe+(i/2),src+i);
-		else
-			acb_set(po+(i/2),src+i);
+		acb_set(pe+i,src+2*i);
+		acb_set(po+i,src+2*i+1);
 	}
-	_acb_poly_mul(dest,po,q+1,po,q+1,bits);
+	if (len % 2 == 0)
+		acb_set(pe+len/2-1,src+len-1);
+	_acb_poly_mul(dest,po,q,po,q,bits);
 	_acb_poly_shift_left(dest,dest,len-1,1);
-	_acb_poly_mul(po,pe,q+1,pe,q+1,bits);
+	_acb_poly_mul(po,pe,q,pe,q,bits);
 	_acb_vec_sub(dest,po,dest,len,bits);
 
-	_acb_vec_clear(pe,q+1);
+	_acb_vec_clear(pe,q);
 	_acb_vec_clear(po,len);
 	return;
 }
@@ -90,9 +90,8 @@ slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong
 	{
 		acb_zero(newCoeff);
 		minIndex = newIndex - degree(ODE) - order(ODE);
-		if (minIndex < 0)
-			minIndex = 0;
-		facStart = newIndex - order(ODE);
+		minIndex &= ~(minIndex >> 31);
+		facStart = newIndex - order(ODE) + 1;
 
 		for (slong oldIndex = newIndex-1; oldIndex >= minIndex; oldIndex--)
 		{
@@ -104,29 +103,23 @@ slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong
 			if (polyMax > order(ODE))
 				polyMax = order(ODE);
 
-			offset = oldIndex-facStart;
+			offset = oldIndex-facStart+1;
+			polyMin = offset & (~(offset >> 31));
 			if (offset <= 0)
-			{
-				polyMin = 0;
 				fmpz_one(fac);
-			}
 			else
-			{
-				polyMin = offset;
-				fmpz_rfac_uiui(fac,facStart+1,polyMin);
-			}
+				fmpz_rfac_uiui(fac,facStart,polyMin);
+
 			acb_mul_fmpz(temp,diff_eq_coeff(ODE,polyMin,polyMin-offset),fac,bits);
 			for (slong polyIndex = polyMin; polyIndex < polyMax; polyIndex++)
 			{
 				fmpz_mul_si(fac,fac,oldIndex - polyIndex);
 				acb_addmul_fmpz(temp,diff_eq_coeff(ODE,polyIndex+1,polyIndex+1-offset),fac,bits);
 			}
-			if (acb_is_zero(temp))
-				continue;
 			acb_addmul(newCoeff,acb_poly_get_coeff_ptr(res,oldIndex),temp,bits);
 		}
 		/* Divide by the coefficient of a_b where b = newIndex + order(ODE) */
-		fmpz_rfac_uiui(fac,facStart+1,order(ODE));
+		fmpz_rfac_uiui(fac,facStart,order(ODE));
 		acb_mul_fmpz(temp,diff_eq_coeff(ODE,order(ODE),0),fac,bits);
 		acb_div(newCoeff,newCoeff,temp,bits);
 
