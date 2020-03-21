@@ -79,7 +79,7 @@ end
 
 # C-interface
 
-function translateC(ode::diffOp)
+function translateC(ode::acb_ode)
 	if ode.odeC != C_NULL
 		deleteC(ode)
 	end
@@ -93,12 +93,7 @@ function translateC(ode::diffOp)
 			deg = degree(p)
 		end
 	end
-	prec = 64
-	try
-		prec = ode.polys[i].parent.base_ring.prec
-	catch
-		println("The input is exact. Assuming a precision of 64 bits")
-	end
+	prec = ode.polys[i].parent.base_ring.prec
 	A = ccall((:acb_ode_init_blank,"libcascade"), Ptr{Nothing}, (Cint,Cint), deg, ode.order)
 	for i = 1:ode.order+1
 		q = Ref{acb_poly}(acb_poly(ode.polys[i],prec))
