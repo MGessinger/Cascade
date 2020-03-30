@@ -1,7 +1,7 @@
 # Cascade - The C Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations
 
-Welcome to Cascade v0.1.0.
-Cascade is a library designed to store and solve differential equations to arbitrary precision. This is accomplished through the use of [Arblib](https://arblib.org)'s acb data type, which uses ball arithmetic to store arbitrary precision floats with error bounds. Solutions are computed as power series expanions around the origin using a recursion relation between the coefficients. With the help of analytic continuation this can be turned into a solution anywhere in the complex plane.
+Welcome to Cascade v1.0.
+Cascade is a library designed to store and solve differential equations to arbitrary precision. This is accomplished through the use of [Arblib](https://arblib.org)'s acb data type, which uses ball arithmetic to store arbitrary precision floating point numbers with error bounds. Solutions are computed as power series expanions about the origin using a recursion relation between the coefficients. With the help of analytic continuation this can be turned into a solution anywhere in the complex plane.
 
 Author: Matthias Gessinger
 
@@ -13,7 +13,7 @@ This library can be build from source as a shared object library through CMake. 
 bash install.sh
 ```
 to run the usual commands for executing CMake. If however any custom flags are desired, CMake will have to be run manually.
-Depending on your system, the installation may have to be run with root privileges to be ablot to put all the files in the necessary places.
+Depending on your system, the installation may have to be run with root privileges to be able to put all the files in the necessary places.
 
 ## Jade
 
@@ -26,14 +26,15 @@ Note that only the directory path has to be given, not the file itself!
 
 ## Examples
 
-The easiest way to get started, is through Julia. The following example creates an *acb_ode* storing Legendre's differential equation for *n = 4*. Then a solution is computed with a precision of 1024 bits (which is equivalent to 308 decimal digits) and printed to the screen.
+The easiest way to get started is through Julia. The following example creates an *acb_ode* storing Legendre's differential equation for *n = 4*. Then a solution is computed with a precision of 1024 bits (which is equivalent to 308 decimal digits) and printed to the screen.
 
 ```julia
+using Nemo
 using Jade
 S = ComplexField(1024);
 R = AcbPolyRing(S,:z);
 A = acb_ode_legendre(R,4);
-@time p = powerSeries(R(3//8),A,5)
+@time powerSeries(R(3//8),A,5)
 ```
 The output of the above program should look something like this:
 
@@ -53,20 +54,27 @@ int main (int argc, char **argv)
 {
     acb_ode_t ODE = acb_ode_legendre(4);
     acb_poly_t pol;
+    acb_t z;
     acb_poly_init(pol);
-    acb_poly_one(pol);
-    acb_set_d(acb_poly_get_coeff_ptr(pol,0),0.375);
+    acb_init(z);
+    
+    acb_set_d(z,0.375);
+    acb_poly_set_coeff_acb(pol,0,z);
     find_power_series(pol,ODE,5,1024);
     acb_ode_dump(ODE,NULL);
     acb_poly_printd(pol,10);
+    
+    acb_clear(z);
+    acb_poly_clear(pol);
     acb_ode_clear(ODE);
+    flint_cleanup();
     return 0;
 }
 ```
 
 To compile the program, run
 ```bash
-gcc test.c -lcascade
+gcc test.c -lcascade -larb -lflint
 ```
 
 The output of *time ./a.out* should then look something like this:
@@ -94,6 +102,6 @@ Because Arb caches some constants internally, it is recommended to call *flint_c
 
 ## Dependencies
 
-Cascade uses [Arb](https://arblib.org) to store complex numbers and [Flint](http://flintlib.org) to handle memory management. Therefore both of these libraries have to be installed in order to build Cascade.
+Cascade uses [Arb](https://arblib.org) to store complex numbers and [Flint](http://flintlib.org) to handle memory management. Therefore both of these libraries have to be installed in order to build Cascade, and also to build programs using Cascade!
 
 Jade uses [Nemo](https://nemocas.org), which adds a wrapper for Arblib to Julia. To use Jade, you must have Nemo installed.
