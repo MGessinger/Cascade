@@ -1,5 +1,16 @@
 #include "cascade.h"
 
+static inline int exactOrNull (int in)
+{
+	int out = 0;
+	__asm__("cmp $0, %[in]\n\t"
+		"cmovns %[in], %[out]"
+		: [out] "+r" (out)
+		: [in] "r" (in)
+		: "cc");
+	return out;
+}
+
 slong truncation_order (arb_t eta, arb_t alpha, slong bits)
 {
 	/* Compute the number of coefficients necessary to obtain a truncation precision of 2^-bits */
@@ -89,8 +100,7 @@ slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong
 	for (newIndex = order(ODE); newIndex < numOfCoeffs; newIndex++)
 	{
 		acb_zero(newCoeff);
-		minIndex = newIndex - degree(ODE) - order(ODE);
-		minIndex &= ~(minIndex >> 31);
+		minIndex = exactOrNull(newIndex - degree(ODE) - order(ODE));
 		facStart = newIndex - order(ODE) + 1;
 
 		for (slong oldIndex = newIndex-1; oldIndex >= minIndex; oldIndex--)
@@ -104,7 +114,7 @@ slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong
 				polyMax = order(ODE);
 
 			offset = oldIndex-facStart+1;
-			polyMin = offset & (~(offset >> 31));
+			polyMin = exactOrNull(offset);
 			if (offset <= 0)
 				fmpz_one(fac);
 			else
