@@ -29,7 +29,7 @@ void      acb_ode_clear (acb_ode_t ODE);
 acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in);
 
 /* I/O */
-acb_ode_t acb_ode_fread (const char *fileName, ulong maxOrder, slong bits);
+acb_ode_t acb_ode_fread (const char *file_name, ulong max_order, slong bits);
 void      acb_ode_dump (acb_ode_t ODE, char *file);
 
 /* Transformations */
@@ -37,6 +37,6 @@ void      acb_ode_shift (acb_ode_t ODE_out, acb_ode_t ODE_in, acb_srcptr a, slon
 slong     acb_ode_reduce (acb_ode_t ODE);
 
 /* Non-documented function (because terrible) */
-void parsePoly (acb_poly_t polyOut, const char *polyString, slong strLength, slong bits);
+void parse_poly (acb_poly_t poly_out, const char *poly_string, slong str_length, slong bits);
 
 #endif

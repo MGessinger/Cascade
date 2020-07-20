@@ -114,7 +114,7 @@ end
 
 # Cacsade interface
 
-function powerSeries(ode::jade_ode{T},p::Union{acb_poly,arb_poly},n::Integer) where T <: Union{acb_poly,arb_poly}
+function powerSeries(ode::jade_ode{T},p::T,n::Integer) where T <: Union{acb_poly,arb_poly}
 	if n <= degree(p)
 		return p
 	end

@@ -1,6 +1,6 @@
 #include "cascade.h"
 
-static inline int exactOrNull (int in)
+static inline int exact_or_null (int in)
 {
 	int out = 0;
 	__asm__("cmp $0, %[in]\n\t"
@@ -74,87 +74,87 @@ void acb_poly_graeffe_transform (acb_ptr dest, acb_srcptr src, slong len, slong 
 	return;
 }
 
-slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong numOfCoeffs, slong bits)
+slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, slong bits)
 {
-	/* Iteratively compute the first numOfCoeffs coefficients of the power series solution of the ODE around zero */
+	/* Iteratively compute the first num_of_coeffs coefficients of the power series solution of the ODE around zero */
 	if (!ODE || !res)
 		return 0;
-	if (numOfCoeffs <= 0 || acb_poly_is_zero(res))
+	if (num_of_coeffs <= 0 || acb_poly_is_zero(res))
 		return 1;
 
 	/* Only now does it make sense to initialise variables */
 	acb_t temp; acb_init(temp);
-	acb_t newCoeff; acb_init(newCoeff); /* Stores the latest coefficient which is being computed */
+	acb_t new_coeff; acb_init(new_coeff); /* Stores the latest coefficient which is being computed */
 
 	/* Now compute the recursion */
 	fmpz_t fac;
 	fmpz_init(fac);
-	slong minIndex, newIndex;
-	slong polyMin, polyMax;
-	slong offset, facStart;
+	slong min_index, new_index;
+	slong poly_min, poly_max;
+	slong offset, fac_start;
 
-	acb_poly_fit_length(res,numOfCoeffs);
+	acb_poly_fit_length(res,num_of_coeffs);
 	/* Negating the constant coefficient of the leading polynomial saves a few cycles later on */
 	acb_neg(diff_eq_coeff(ODE,order(ODE),0),diff_eq_coeff(ODE,order(ODE),0));
 
-	for (newIndex = order(ODE); newIndex < numOfCoeffs; newIndex++)
+	for (new_index = order(ODE); new_index < num_of_coeffs; new_index++)
 	{
-		acb_zero(newCoeff);
-		minIndex = exactOrNull(newIndex - degree(ODE) - order(ODE));
-		facStart = newIndex - order(ODE) + 1;
+		acb_zero(new_coeff);
+		min_index = exact_or_null(new_index - degree(ODE) - order(ODE));
+		fac_start = new_index - order(ODE) + 1;
 
-		for (slong oldIndex = newIndex-1; oldIndex >= minIndex; oldIndex--)
+		for (slong old_index = new_index-1; old_index >= min_index; old_index--)
 		{
-			if (acb_poly_get_coeff_ptr(res,oldIndex) == NULL)
+			if (acb_poly_get_coeff_ptr(res,old_index) == NULL)
 				continue;
 			/* Loop through the polynomials */
-			polyMax = oldIndex - minIndex;
+			poly_max = old_index - min_index;
 			/* No more than order(ODE) terms can contribute: */
-			if (polyMax > order(ODE))
-				polyMax = order(ODE);
+			if (poly_max > order(ODE))
+				poly_max = order(ODE);
 
-			offset = oldIndex-facStart+1;
-			polyMin = exactOrNull(offset);
+			offset = old_index-fac_start+1;
+			poly_min = exact_or_null(offset);
 			if (offset <= 0)
 				fmpz_one(fac);
 			else
-				fmpz_rfac_uiui(fac,facStart,polyMin);
+				fmpz_rfac_uiui(fac,fac_start,poly_min);
 
-			acb_mul_fmpz(temp,diff_eq_coeff(ODE,polyMin,polyMin-offset),fac,bits);
-			for (slong polyIndex = polyMin; polyIndex < polyMax; polyIndex++)
+			acb_mul_fmpz(temp,diff_eq_coeff(ODE,poly_min,poly_min-offset),fac,bits);
+			for (slong poly_index = poly_min; poly_index < poly_max; poly_index++)
 			{
-				fmpz_mul_si(fac,fac,oldIndex - polyIndex);
-				acb_addmul_fmpz(temp,diff_eq_coeff(ODE,polyIndex+1,polyIndex+1-offset),fac,bits);
+				fmpz_mul_si(fac,fac,old_index - poly_index);
+				acb_addmul_fmpz(temp,diff_eq_coeff(ODE,poly_index+1,poly_index+1-offset),fac,bits);
 			}
-			acb_addmul(newCoeff,acb_poly_get_coeff_ptr(res,oldIndex),temp,bits);
+			acb_addmul(new_coeff,acb_poly_get_coeff_ptr(res,old_index),temp,bits);
 		}
-		/* Divide by the coefficient of a_b where b = newIndex + order(ODE) */
-		fmpz_rfac_uiui(fac,facStart,order(ODE));
+		/* Divide by the coefficient of a_b where b = new_index + order(ODE) */
+		fmpz_rfac_uiui(fac,fac_start,order(ODE));
 		acb_mul_fmpz(temp,diff_eq_coeff(ODE,order(ODE),0),fac,bits);
-		acb_div(newCoeff,newCoeff,temp,bits);
+		acb_div(new_coeff,new_coeff,temp,bits);
 
-		if (!acb_is_finite(newCoeff))
+		if (!acb_is_finite(new_coeff))
 		{
-			flint_printf("A coefficient was evaluated to be NaN. Aborting.\n");
-			newIndex = 0;
+			flint_printf("A coefficient was evaluated to be Na_n. Aborting.\n");
+			new_index = 0;
 			break;
 		}
-		acb_poly_set_coeff_acb(res,newIndex,newCoeff);
+		acb_poly_set_coeff_acb(res,new_index,new_coeff);
 	}
-	if (newIndex == 0)
+	if (new_index == 0)
 		acb_ode_dump(ODE,"odedump.txt");
 
 	/* Undo the negation performed earlier */
 	acb_neg(diff_eq_coeff(ODE,order(ODE),0),diff_eq_coeff(ODE,order(ODE),0));
 
-	acb_clear(newCoeff);
+	acb_clear(new_coeff);
 	acb_clear(temp);
 	fmpz_clear(fac);
-	return newIndex;
+	return new_index;
 }
 
 void analytic_continuation (acb_poly_t res, acb_ode_t ODE, acb_srcptr path,
-		slong len, slong numOfCoeffs, slong bits)
+		slong len, slong num_of_coeffs, slong bits)
 {
 	/* Evaluate a solution along the given piecewise linear path */
 	acb_t a; acb_init(a);
@@ -162,7 +162,7 @@ void analytic_continuation (acb_poly_t res, acb_ode_t ODE, acb_srcptr path,
 	for (slong time = 0; time+1 < len; time++)
 	{
 		acb_ode_shift(ODE_shift,ODE,path+time,bits);
-		if (find_power_series(res,ODE_shift,numOfCoeffs,bits) == 0)
+		if (find_power_series(res,ODE_shift,num_of_coeffs,bits) == 0)
 		{
 			flint_printf("The power series expansion did not converge from ");
 			acb_printd(path+time,10);
@@ -186,21 +186,21 @@ void find_monodromy_matrix (acb_mat_t mono, acb_ode_t ODE, acb_t z0, slong bits)
 		flint_printf("No differential operator was provided. Please confirm your input.\n");
 		return;
 	}
-	arb_t radOfConv;
-	arb_init(radOfConv);
+	arb_t rad_of_conv;
+	arb_init(rad_of_conv);
 	/* Move to the given singularity */
 	if (z0 != NULL && acb_is_finite(z0))
 		acb_ode_shift(ODE,ODE,z0,bits);
 
 	/* Choose a path for the analytic continuation */
-	radiusOfConvergence(radOfConv,ODE,40,bits);
-	if (arb_is_zero(radOfConv))
+	radius_of_convergence(rad_of_conv,ODE,40,bits);
+	if (arb_is_zero(rad_of_conv))
 		return;
-	if (!arb_is_finite(radOfConv))
-		arb_one(radOfConv);
+	if (!arb_is_finite(rad_of_conv))
+		arb_one(rad_of_conv);
 	else
-		arb_div_si(radOfConv,radOfConv,2,bits);
-	arb_get_mid_arb(radOfConv,radOfConv);
+		arb_div_si(rad_of_conv,rad_of_conv,2,bits);
+	arb_get_mid_arb(rad_of_conv,rad_of_conv);
 
 	/* Now initialize the path to move along and a polynomial to store the power series */
 	slong steps = 256;
@@ -208,21 +208,21 @@ void find_monodromy_matrix (acb_mat_t mono, acb_ode_t ODE, acb_t z0, slong bits)
 	acb_poly_t res;
 	acb_poly_init(res);
 	_acb_vec_unit_roots(path, steps, steps, bits);
-	_acb_vec_scalar_mul_arb(path,path,steps,radOfConv,bits);
+	_acb_vec_scalar_mul_arb(path,path,steps,rad_of_conv,bits);
 
 	/* Find the number of coefficients necessary every time (I am abusing path+steps for this because I can) */
 	acb_sub(path+steps,path,path+1,bits);
 	acb_abs(acb_realref(path+steps),path+steps,bits);
-	slong numOfCoeffs = truncation_order(acb_realref(path+steps),radOfConv,bits);
+	slong num_of_coeffs = truncation_order(acb_realref(path+steps),rad_of_conv,bits);
 	acb_set(path+steps,path);
-	arb_clear(radOfConv);
+	arb_clear(rad_of_conv);
 
 	/* Compute the function along the chosen path */
 	for (slong i = 0; i < order(ODE); i++)
 	{
 		acb_poly_zero(res);
 		acb_poly_set_coeff_si(res,i,1);
-		analytic_continuation(res,ODE,path,steps+1,numOfCoeffs,bits);
+		analytic_continuation(res,ODE,path,steps+1,num_of_coeffs,bits);
 		_acb_vec_set(acb_mat_entry_ptr(mono,i,0),acb_poly_get_coeff_ptr(res,0),order(ODE));
 	}
 	acb_mat_transpose(mono,mono);
@@ -238,12 +238,12 @@ void find_monodromy_matrix (acb_mat_t mono, acb_ode_t ODE, acb_t z0, slong bits)
 	return;
 }
 
-void radiusOfConvergence (arb_t radOfConv, acb_ode_t ODE, slong n, slong bits)
+void radius_of_convergence (arb_t rad_of_conv, acb_ode_t ODE, slong n, slong bits)
 {
 	/* Find the radius of convergence of the power series expansion */
 	if (ODE == NULL)
 	{
-		arb_zero(radOfConv);
+		arb_zero(rad_of_conv);
 		return;
 	}
 	slong deg = 0;
@@ -257,7 +257,7 @@ void radiusOfConvergence (arb_t radOfConv, acb_ode_t ODE, slong n, slong bits)
 	if (deg == 0)
 	{
 		/* There are no singularities (outside zero, possibly) */
-		arb_indeterminate(radOfConv);
+		arb_indeterminate(rad_of_conv);
 		_acb_vec_clear(P,degree(ODE)+1);
 		return;
 	}
@@ -272,10 +272,10 @@ void radiusOfConvergence (arb_t radOfConv, acb_ode_t ODE, slong n, slong bits)
 	fmpq_one(root);
 	fmpq_mul_2exp(root,root,n);
 	fmpq_inv(root,root);
-	_acb_poly_root_bound_fujiwara(arb_radref(radOfConv),P,deg+1);
-	arb_get_rad_arb(radOfConv,radOfConv);
-	arb_pow_fmpq(radOfConv,radOfConv,root,bits);
-	arb_inv(radOfConv,radOfConv,bits);
+	_acb_poly_root_bound_fujiwara(arb_radref(rad_of_conv),P,deg+1);
+	arb_get_rad_arb(rad_of_conv,rad_of_conv);
+	arb_pow_fmpq(rad_of_conv,rad_of_conv,root,bits);
+	arb_inv(rad_of_conv,rad_of_conv,bits);
 
 	/* Error bound */
 	arb_t radius;
@@ -283,8 +283,8 @@ void radiusOfConvergence (arb_t radOfConv, acb_ode_t ODE, slong n, slong bits)
 	arb_set_si(radius,2*deg);
 	arb_pow_fmpq(radius,radius,root,bits);
 	arb_sub_si(radius,radius,1,bits);
-	arb_mul(radius,radOfConv,radius,bits);
-	arb_add_error(radOfConv,radius);
+	arb_mul(radius,rad_of_conv,radius,bits);
+	arb_add_error(rad_of_conv,radius);
 
 	arb_clear(radius);
 	fmpq_clear(root);
