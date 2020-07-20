@@ -1,13 +1,12 @@
 #include "cascade.h"
 
-static inline int exact_or_null (int in)
+static inline slong positive_or_null (slong in)
 {
-	int out = 0;
-	__asm__("cmp $0, %[in]\n\t"
+	slong out = 0;
+	__asm__("test %[in], %[in]\n\t"
 		"cmovns %[in], %[out]"
 		: [out] "+r" (out)
-		: [in] "r" (in)
-		: "cc");
+		: [in] "r" (in));
 	return out;
 }
 
@@ -100,7 +99,7 @@ slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, slo
 	for (new_index = order(ODE); new_index < num_of_coeffs; new_index++)
 	{
 		acb_zero(new_coeff);
-		min_index = exact_or_null(new_index - degree(ODE) - order(ODE));
+		min_index = positive_or_null(new_index - degree(ODE) - order(ODE));
 		fac_start = new_index - order(ODE) + 1;
 
 		for (slong old_index = new_index-1; old_index >= min_index; old_index--)
@@ -114,11 +113,8 @@ slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, slo
 				poly_max = order(ODE);
 
 			offset = old_index-fac_start+1;
-			poly_min = exact_or_null(offset);
-			if (offset <= 0)
-				fmpz_one(fac);
-			else
-				fmpz_rfac_uiui(fac,fac_start,poly_min);
+			poly_min = positive_or_null(offset);
+			fmpz_rfac_uiui(fac,fac_start,poly_min);
 
 			acb_mul_fmpz(temp,diff_eq_coeff(ODE,poly_min,poly_min-offset),fac,bits);
 			for (slong poly_index = poly_min; poly_index < poly_max; poly_index++)
