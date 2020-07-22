@@ -56,13 +56,13 @@ void acb_poly_graeffe_transform (acb_ptr dest, acb_srcptr src, slong len, slong 
 	slong q = (len-1)/2+1;
 	acb_ptr pe = _acb_vec_init(q);
 	acb_ptr po = _acb_vec_init(len);
-	for (slong i = (len+1)/2-1; i >= 0; i--)
+	for (slong i = len-1; i >= 0; i--)
 	{
-		acb_set(pe+i,src+2*i);
-		acb_set(po+i,src+2*i+1);
+		if (i % 2 == 0)
+			acb_set(pe+i/2,src+i);
+		else
+			acb_set(po+i/2,src+i);
 	}
-	if (len % 2 == 0)
-		acb_set(pe+len/2-1,src+len-1);
 	_acb_poly_mul(dest,po,q,po,q,bits);
 	_acb_poly_shift_left(dest,dest,len-1,1);
 	_acb_poly_mul(po,pe,q,pe,q,bits);

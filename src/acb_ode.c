@@ -160,7 +160,7 @@ void acb_ode_dump (acb_ode_t ODE, char *file)
 		out = fopen(file,"w");
 	if (out == NULL)
 		return;
-	flint_fprintf(out,"Order: %w\n_degree: %w\n",order(ODE),degree(ODE));
+	flint_fprintf(out,"Order: %w\nDegree: %w\n",order(ODE),degree(ODE));
 	for (slong i = 0; i <= order(ODE); i++)
 	{
 		flint_fprintf(out,"diff_eq_poly(ODE,%w) = ",i);
@@ -219,13 +219,13 @@ slong acb_ode_reduce (acb_ode_t ODE)
 	}
 	if (reduced == 0)
 		return 0;
-	acb_ode_t new_o_d_e = acb_ode_init_blank(degree(ODE)-reduced,order(ODE));
+	acb_ode_t newODE = acb_ode_init_blank(degree(ODE)-reduced,order(ODE));
 	for (slong i = 0; i<= order(ODE); i++)
-		_acb_poly_shift_right(diff_eq_poly(new_o_d_e,i),diff_eq_poly(ODE,i),degree(ODE)+1,reduced);
+		_acb_poly_shift_right(diff_eq_poly(newODE,i),diff_eq_poly(ODE,i),degree(ODE)+1,reduced);
 	free(ODE->polys);
-	ODE->polys = new_o_d_e->polys;
+	ODE->polys = newODE->polys;
 	degree(ODE) -= reduced;
-	free(new_o_d_e);
+	free(newODE);
 	return reduced;
 }
 
