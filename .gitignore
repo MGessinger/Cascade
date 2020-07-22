@@ -1,5 +1,2 @@
-data/
 build/
-bench/
 doc/build/
-CMakeLists.txt

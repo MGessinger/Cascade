@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.0)
 project(Cascade VERSION 1.0)
 
+# Include tests, which have their own CMakeLists in a subdirectory
+enable_testing()
+add_subdirectory(tests)
+
+# Setup Cascade 
 set(CascadeSrc
 	src/cascade.c
 	src/acb_ode.c
