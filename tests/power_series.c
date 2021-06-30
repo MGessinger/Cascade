@@ -7,8 +7,8 @@ int main ()
 	acb_poly_t pol;
 	acb_poly_init(pol);
 
-	acb_poly_set_coeff_si(pol,0,3);
-	find_power_series(pol,ODE,10,1024);
+	acb_poly_set_coeff_si(pol, 0, 3);
+	find_power_series(pol, ODE, 10, 1024);
 	acb_ode_clear(ODE);
 
 	int return_value = 0;

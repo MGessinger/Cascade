@@ -17,7 +17,7 @@ Depending on your system, the installation may have to be run with root privileg
 
 ## Jade
 
-Along with Cascade, this project comes with Jade, an interface to Cascade, which can be used from the [Julia](https://julialang.org) command line. To use Jade, place the file Jade.jl somewhere where Julia can find it or add it to the LOAD_PATH via
+Along with Cascade, this project comes with Jade, an interface to Cascade, which can be used from the [Julia](https://julialang.org) command line. To use Jade, place the file Jade.jl somewhere where Julia can find it or add it to the LOAD\_PATH via
 
 ```bash
 push!(LOAD_PATH, "/path/to/jade")
@@ -41,7 +41,7 @@ The output of the above program should look something like this:
 ```bash
   0.007656 seconds (20 allocations: 2.281 KiB)
 [ 0.37500000000000000000000000000000000000000000000000000000000000000000000000000 + i*0, 0 + i*0,
-[-3.75000000000000000000000000000000000000000000000000000000000000000000000000000 +/- 1e-313] + i*0, 0 + i*0, 
+[-3.75000000000000000000000000000000000000000000000000000000000000000000000000000 +/- 1e-313] + i*0, 0 + i*0,
 [ 4.37500000000000000000000000000000000000000000000000000000000000000000000000000 +/- 1e-313] + i*0 ]
 ```
 
@@ -57,13 +57,13 @@ int main (int argc, char **argv)
     acb_t z;
     acb_poly_init(pol);
     acb_init(z);
-    
+
     acb_set_d(z,0.375);
     acb_poly_set_coeff_acb(pol,0,z);
     find_power_series(pol,ODE,5,1024);
     acb_ode_dump(ODE,NULL);
     acb_poly_printd(pol,10);
-    
+
     acb_clear(z);
     acb_poly_clear(pol);
     acb_ode_clear(ODE);
@@ -81,9 +81,9 @@ The output of *time ./a.out* should then look something like this:
 ```bash
 Order: 2
 Degree: 2
-diff_eq_poly(ODE,0) = (20 + 0j)  +/-  (0, 0j)	(0 + 0j)  +/-  (0, 0j)	(0 + 0j)  +/-  (0, 0j)	
-diff_eq_poly(ODE,1) = (0 + 0j)  +/-  (0, 0j)	(-2 + 0j)  +/-  (0, 0j)	(0 + 0j)  +/-  (0, 0j)	
-diff_eq_poly(ODE,2) = (1 + 0j)  +/-  (0, 0j)	(0 + 0j)  +/-  (0, 0j)	(-1 + 0j)  +/-  (0, 0j)	
+diff_eq_poly(ODE,0) = (20 + 0j)  +/-  (0, 0j)	(0 + 0j)  +/-  (0, 0j)	(0 + 0j)  +/-  (0, 0j)
+diff_eq_poly(ODE,1) = (0 + 0j)  +/-  (0, 0j)	(-2 + 0j)  +/-  (0, 0j)	(0 + 0j)  +/-  (0, 0j)
+diff_eq_poly(ODE,2) = (1 + 0j)  +/-  (0, 0j)	(0 + 0j)  +/-  (0, 0j)	(-1 + 0j)  +/-  (0, 0j)
 
 Solution:
 [(0.375 + 0j)  +/-  (0, 0j)

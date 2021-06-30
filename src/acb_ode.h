@@ -6,8 +6,8 @@
 
 #define degree(ODE) ((ODE)->degree)
 #define order(ODE) ((ODE)->order)
-#define diff_eq_poly(ODE,i) (((ODE)->polys) + (i)*(degree(ODE)+1))
-#define diff_eq_coeff(ODE,i,j) (diff_eq_poly(ODE,i) + (j))
+#define diff_eq_poly(ODE, i) (((ODE)->polys) + (i)*(degree(ODE)+1))
+#define diff_eq_coeff(ODE, i, j) (diff_eq_poly(ODE, i) + (j))
 
 typedef struct acb_ode_struct {
 	slong order;

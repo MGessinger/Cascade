@@ -21,15 +21,11 @@ add_library(cascade SHARED ${CascadeSrc})
 
 target_link_libraries(cascade flint arb)
 
-if(MSVC)
-	target_compile_options(cascade PRIVATE /W4 /WX /O2)
-else(MSVC)
-	target_compile_options(cascade PRIVATE -Wall -Wextra -pedantic -O2 -g -funroll-loops)
-endif(MSVC)
+target_compile_options(cascade PRIVATE -Wall -Wextra -pedantic)
 
 set_target_properties(cascade PROPERTIES PUBLIC_HEADER "${CascadeHeaders}")
 
 install(TARGETS cascade
-	LIBRARY DESTINATION lib COMPONENT devel
-	PUBLIC_HEADER DESTINATION include COMPONENT devel
+	LIBRARY DESTINATION
+	PUBLIC_HEADER DESTINATION
 )
