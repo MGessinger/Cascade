@@ -41,8 +41,6 @@ acb_ode_t acb_ode_init_blank (slong degree, slong order)
 acb_ode_t acb_ode_init (acb_poly_t *polys, slong order)
 {
 	/* Create a differential operator defined by *polys* */
-	if (polys == NULL)
-		return NULL;
 	acb_ode_t ODE = flint_malloc(sizeof(acb_ode_struct));
 	if (ODE == NULL)
 		return NULL;
@@ -68,8 +66,6 @@ acb_ode_t acb_ode_init (acb_poly_t *polys, slong order)
 void acb_ode_clear (acb_ode_t ODE)
 {
 	/* Free memory allocated for ODE*/
-	if (ODE == NULL)
-		return;
 	_acb_vec_clear(diff_eq_poly(ODE,0),(order(ODE)+1)*(degree(ODE)+1));
 	flint_free(ODE);
 	return;
@@ -87,9 +83,7 @@ acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in)
 
 void acb_ode_set_poly (acb_ode_t ODE, acb_poly_t poly, slong index)
 {
-	if (!ODE || !poly)
-		return;
-	else if (index < 0 || index > order(ODE)+1)
+	if (index < 0 || index > order(ODE)+1)
 		return;
 	slong len = acb_poly_length(poly);
 	if (len > degree(ODE)+1)
@@ -100,61 +94,9 @@ void acb_ode_set_poly (acb_ode_t ODE, acb_poly_t poly, slong index)
 
 /* I/O */
 
-acb_ode_t acb_ode_fread (const char *file_name, ulong max_order, slong bits)
-{
-	/* Read an ODE from a file */
-	if (max_order == 0)
-		max_order = UWORD_MAX;
-	FILE *input = fopen(file_name,"r");
-	if (input == NULL)
-	{
-		flint_printf("Could not open file %s. Please confirm input!\n",file_name);
-		return NULL;
-	}
-	char poly[512];
-	long unsigned derivative = 0;
-	int length = 0;
-	ulong number_of_pols;
-	if (fscanf(input,"%*c%lu*(",&derivative) == 0)
-	{
-		flint_printf("The file format is wrong. Please make sure to declare the degree of derivation first.\n");
-		fclose(input);
-		return NULL;
-	}
-	number_of_pols = derivative;
-	if (derivative > max_order)
-	{
-		flint_printf("The order of the ODE was larger than allowed. Aborted.\n");
-		fclose(input);
-		return NULL;
-	}
-	acb_poly_t *polys = malloc((derivative+1)*sizeof(acb_poly_t));
-	if (polys == NULL)
-	{
-		flint_printf("Could not allocate memory. Please try again.\n");
-		fclose(input);
-		return NULL;
-	}
-	for (ulong i = 0; i <= number_of_pols; i++)
-		acb_poly_init(polys[i]);
-	do {
-		if (fscanf(input,"%[^)*]%n",poly,&length) != 0)
-			parse_poly(polys[derivative],poly,length,bits);
-	} while (fscanf(input,"%*[^a-z]%*c%lu*(",&derivative) != EOF);
-	fclose(input);
-	acb_ode_t ODE = acb_ode_init(polys,number_of_pols);
-	for (ulong i = 0; i <= number_of_pols; i++)
-		acb_poly_clear(polys[i]);
-	flint_free(polys);
-	flint_cleanup();
-	return ODE;
-}
-
 void acb_ode_dump (acb_ode_t ODE, char *file)
 {
 	/* Dumps the ODE to file. If file is NULL, dump to stdout */
-	if (ODE == NULL)
-		return;
 	FILE *out = stdout;
 	if (file != NULL)
 		out = fopen(file,"w");
@@ -181,8 +123,6 @@ void acb_ode_dump (acb_ode_t ODE, char *file)
 void acb_ode_shift (acb_ode_t ODE_out, acb_ode_t ODE_in, acb_srcptr a, slong bits)
 {
 	/* Shifts the origin to a */
-	if (!ODE_in || !ODE_out)
-		return;
 	acb_ode_set(ODE_out,ODE_in);
 	if (acb_is_zero(a))
 		return;
@@ -200,24 +140,15 @@ void acb_ode_shift (acb_ode_t ODE_out, acb_ode_t ODE_in, acb_srcptr a, slong bit
 slong acb_ode_reduce (acb_ode_t ODE)
 {
 	/* Divides all polynomials by z^n, if they share such a factor */
-	if (ODE == NULL)
-		return 0;
 	slong reduced = 0;
-	while (acb_is_zero(diff_eq_coeff(ODE,order(ODE),reduced)))
-	{
+	int all_zero = 1;
+	do {
+		for (slong i = 0; i < order(ODE); i++)
+			all_zero &= acb_is_zero(diff_eq_coeff(ODE, i, reduced));
 		reduced++;
-	}
-	for (slong i = 0; i < order(ODE); i++)
-	{
-		/* reduced finds the number of leading Zero coefficients */
-		for (slong j = 0; j < reduced; j++)
-			if(!acb_is_zero(diff_eq_coeff(ODE,i,j)))
-			{
-				reduced = j;
-				break;
-			}
-	}
-	if (reduced == 0)
+	} while (all_zero);
+	reduced -= 1; /* From the loop body */
+	if (reduced <= 0)
 		return 0;
 	acb_ode_t newODE = acb_ode_init_blank(degree(ODE)-reduced,order(ODE));
 	for (slong i = 0; i<= order(ODE); i++)
@@ -229,53 +160,17 @@ slong acb_ode_reduce (acb_ode_t ODE)
 	return reduced;
 }
 
-/* This function is so terrible, you probably don't want to use it. Ever. */
-
-void parse_poly (acb_poly_t poly_out, const char *poly_string, const slong str_length, slong bits)
+slong acb_ode_valuation (acb_ode_t ODE)
 {
-	if (str_length == 0 || poly_string[0] == '\0')
+	slong val = 0;
+	for (int i = 0; i <= order(ODE); i++)
 	{
-		acb_poly_zero(poly_out);
-		return;
-	}
-	if (poly_out == NULL)
-	{
-		flint_printf("The output polynomial is the NULL pointer. Please check your input.\n");
-		return;
-	}
-	acb_t coeff; acb_init(coeff);
+		slong v = i;
+		while (acb_is_zero(diff_eq_coeff(ODE, i, i-v)))
+			v--;
 
-	int length_of_real = 0, length_of_imag;
-	char real_part[128];
-	char imag_part[128];
-	slong total_length = 0;
-	slong index = 0;
-
-	while (total_length < str_length)
-	{
-		acb_zero(coeff);
-		length_of_real = length_of_imag = 0;
-		if (sscanf(poly_string+total_length,"%[^, +]%n",real_part,&length_of_real) != 0)
-		{
-			arb_set_str(acb_realref(coeff),real_part,bits);
-			total_length += length_of_real;
-			acb_poly_set_coeff_acb(poly_out,index,coeff);
-		}
-		if (total_length >= str_length)
-			break;
-		if (sscanf(poly_string+total_length,"%*[ +]%[^j,]j%n",imag_part,&length_of_imag) != 0)
-		{
-			if (length_of_imag != 0)
-			{
-				arb_set_str(acb_imagref(coeff),imag_part,bits);
-				total_length += length_of_imag;
-				acb_poly_set_coeff_acb(poly_out,index,coeff);
-			}
-		}
-		sscanf(poly_string+total_length,"%*[, +]%n",&length_of_real);
-		total_length += length_of_real;
-		index++;
+		if (v > val)
+			val = v;
 	}
-	acb_clear(coeff);
-	return;
+	return val;
 }
