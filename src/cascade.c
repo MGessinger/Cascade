@@ -82,41 +82,40 @@ slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, slo
 
 	fmpz_t fac; fmpz_init(fac);
 	slong i_min, i_max;
-	slong v = acb_ode_valuation(ODE); // Soon to be valuation(ODE)
+	slong v = acb_ode_valuation(ODE);
 
 	acb_poly_fit_length(res, num_of_coeffs);
-
 	for (slong b_max = v; b_max < num_of_coeffs; b_max++)
 	{
 		acb_zero(new_coeff);
-		slong b_min = clamp(b_max - degree(ODE) - v, 0, b_max);
-
+		slong exp = b_max - v;
 		/* Loop through the known coefficients of the power series */
-		for (slong b = b_min; b <= b_max; b++)
-		{
+		slong b_min = clamp(exp - degree(ODE), 0, b_max);
+		acb_set(temp2, diff_eq_coeff(ODE, 0, exp-b_min));
+		slong b = b_min;
+		do {
+			acb_poly_get_coeff_acb(temp1, res, b);
+			acb_mul(temp2, temp1, temp2, bits);
+			acb_sub(new_coeff, new_coeff, temp2, bits);
+
 			acb_zero(temp2);
+			fmpz_one(fac);
 			/* Loop through the polynomials */
-			i_min = clamp(b - b_max + v, 0, v);
+			b++;
+			i_min = clamp(b - exp, 0, v);
 			i_max = clamp(b - b_min, 0, order(ODE));
 			for (slong i = i_min; i <= i_max; i++)
 			{
-				fmpz_rfac_uiui(fac, b - i + 1, i);
-				acb_set(temp1, diff_eq_coeff(ODE, i, i + (b_max-v) - b));
+				acb_set(temp1, diff_eq_coeff(ODE, i, i + exp - b));
 				acb_mul_fmpz(temp1, temp1, fac, bits);
 				acb_add(temp2, temp2, temp1, bits);
+				fmpz_mul_si(fac, fac, b-i);
 			}
-			if (b == b_max)
-			{
-				acb_div(new_coeff, new_coeff, temp2, bits);
-				acb_poly_set_coeff_acb(res, b_max, new_coeff);
-			}
-			else
-			{
-				acb_poly_get_coeff_acb(temp1, res, b);
-				acb_mul(temp2, temp1, temp2, bits);
-				acb_sub(new_coeff, new_coeff, temp2, bits);
-			}
-		}
+			fmpz_rfac_uiui(fac, b-i_min+1, i_min);
+			acb_mul_fmpz(temp2, temp2, fac, bits);
+		} while (b != b_max);
+		acb_div(new_coeff, new_coeff, temp2, bits);
+		acb_poly_set_coeff_acb(res, b_max, new_coeff);
 	}
 
 	acb_clear(new_coeff);
