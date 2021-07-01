@@ -3,33 +3,45 @@
 
 int main ()
 {
-	acb_ode_t ODE = acb_ode_legendre(4);
-	acb_poly_t pol;
-	acb_poly_init(pol);
+	slong prec = 1024;
+	acb_t z; acb_init(z);
+	acb_zero(z);
+	acb_ode_t ODE = acb_ode_bessel(z, prec);
+	acb_ode_reduce(ODE);
 
-	acb_poly_set_coeff_si(pol, 0, 3);
-	find_power_series(pol, ODE, 10, 1024);
+	acb_poly_t poly; acb_poly_init(poly);
+	acb_poly_one(poly);
+
+	find_power_series(poly, ODE, 150, prec);
 	acb_ode_clear(ODE);
 
 	int return_value = 0;
-	acb_t z;
-	acb_init(z);
-	acb_set_si(z, 3);
-	if (!acb_contains(acb_poly_get_coeff_ptr(pol, 0), z))
-		return_value = 1;
-	if (!acb_contains_zero(acb_poly_get_coeff_ptr(pol, 1)))
-		return_value = 1;
-	acb_set_si(z, -30);
-	if (!acb_contains(acb_poly_get_coeff_ptr(pol, 2), z))
-		return_value = 1;
-	if (!acb_contains_zero(acb_poly_get_coeff_ptr(pol, 3)))
-		return_value = 1;
-	acb_set_si(z, 35);
-	if (!acb_contains(acb_poly_get_coeff_ptr(pol, 4), z))
-		return_value = 1;
+	acb_t c; acb_init(c);
+	acb_one(z);
+	for (int i = 2; i < 150; i++) {
+		acb_poly_get_coeff_acb(c, poly, i);
+		if (i%2 != 0)
+		{
+			if (!acb_is_zero(c))
+			{
+				return_value = 1;
+				break;
+			}
+		}
+		else
+		{
+			acb_div_si(z, z, -i*i, prec);
+			if (!acb_contains(c, z))
+			{
+				return_value = 1;
+				break;
+			}
+		}
+	}
 
 	acb_clear(z);
-	acb_poly_clear(pol);
+	acb_clear(c);
+	acb_poly_clear(poly);
 	flint_cleanup();
 	return return_value;
 }
