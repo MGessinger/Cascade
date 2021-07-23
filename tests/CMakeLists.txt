@@ -1,11 +1,11 @@
 set(Tests
-	graeffe
-	radius
 	legendre
 	bessel
+	hypgeom
+	graeffe
+	radius
 	reduce
 	power_series
-	hypgeom
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
