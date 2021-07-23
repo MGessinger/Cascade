@@ -125,7 +125,7 @@ function powerSeries(ode::jade_ode{T},p::T,n::Integer) where T <: Union{acb_poly
 	prec = R.base_ring.prec
 	p2 = acb_poly(p,prec)
 	q = Ref{acb_poly}(p2)
-	ccall((:find_power_series,"libcascade"),Cvoid,(Ref{acb_poly},Ptr{Nothing},Cint,Cint),q,ode.odeC,n,prec)
+	ccall((:acb_ode_solve_fuchs,"libcascade"),Cvoid,(Ref{acb_poly},Ptr{Nothing},Cint,Cint),q,ode.odeC,n,prec)
 	if isa(ode,acb_ode) || isa(p,acb_poly)
 		return R(p2)
 	else

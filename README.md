@@ -60,7 +60,7 @@ int main (int argc, char **argv)
 
     acb_set_d(z,0.375);
     acb_poly_set_coeff_acb(pol,0,z);
-    find_power_series(pol,ODE,5,1024);
+    acb_ode_solve_fuchs(pol,ODE,5,1024);
     acb_ode_dump(ODE,NULL);
     acb_poly_printd(pol,10);
 

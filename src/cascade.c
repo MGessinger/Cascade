@@ -73,7 +73,7 @@ void acb_poly_graeffe_transform (acb_ptr dest, acb_srcptr src, slong len, slong 
 	return;
 }
 
-slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, slong bits)
+void acb_ode_solve_fuchs (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, slong bits)
 {
 	/* Iteratively compute the first num_of_coeffs coefficients of the power series solution of the ODE around zero */
 	acb_t temp1; acb_init(temp1);
@@ -122,7 +122,6 @@ slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, slo
 	acb_clear(temp1);
 	acb_clear(temp2);
 	fmpz_clear(fac);
-	return 1;
 }
 
 void analytic_continuation (acb_poly_t res, acb_ode_t ODE, acb_srcptr path,
@@ -134,15 +133,7 @@ void analytic_continuation (acb_poly_t res, acb_ode_t ODE, acb_srcptr path,
 	for (slong time = 0; time+1 < len; time++)
 	{
 		acb_ode_shift(ODE_shift, ODE, path+time, bits);
-		if (find_power_series(res, ODE_shift, num_of_coeffs, bits) == 0)
-		{
-			flint_printf("The power series expansion did not converge from ");
-			acb_printd(path+time, 10);
-			flint_printf(" to ");
-			acb_printd(path+time+1, 10);
-			flint_printf(" where t = %w.\n", time);
-			break;
-		}
+		acb_ode_solve_fuchs(res, ODE_shift, num_of_coeffs, bits);
 		acb_sub(a, path+time+1, path+time, bits);
 		acb_poly_taylor_shift(res, res, a, bits);
 	}

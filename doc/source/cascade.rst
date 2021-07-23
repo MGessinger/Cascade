@@ -36,9 +36,9 @@ Functions
 
 	Return a bound for the number of coefficients necessary to assert the Taylor expansion to have a tail of less than 2^-*bits*.
 
-.. function:: slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, slong bits)
+.. function:: void acb_ode_solve_fuchs (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, slong bits)
 
-	Computes a truncated power series expansion of degree *num_of_coeffs* from the initial values provided in *res*, which solves the differental equation defined by ODE. This number could (and in general should) be obtained by calling :func:`truncation_bound`.
+	Computes a truncated power series solution of the differential equation defined by ODE, using the initial values provided in *res*, and truncated to degree *num_of_coeffs*. This number could (and in general should) be obtained by calling :func:`truncation_bound`.
 
 .. function:: void analytic_continuation (acb_t res, acb_ode_t ODE, acb_srcptr path, slong len, slong num_of_coeffs, slong prec, int output_series)
 

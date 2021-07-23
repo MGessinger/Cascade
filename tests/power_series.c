@@ -12,7 +12,7 @@ int main ()
 	acb_poly_t poly; acb_poly_init(poly);
 	acb_poly_one(poly);
 
-	find_power_series(poly, ODE, 150, prec);
+	acb_ode_solve_fuchs(poly, ODE, 150, prec);
 	acb_ode_clear(ODE);
 
 	int return_value = 0;

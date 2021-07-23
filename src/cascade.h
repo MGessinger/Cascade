@@ -6,7 +6,7 @@
 #include "acb_ode.h"
 
 /* Compute a power series solution to ODE */
-slong find_power_series (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, slong bits);
+void acb_ode_solve_fuchs (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, slong bits);
 slong truncation_order (arb_t eta, arb_t alpha, slong bits);
 
 /* Compute analytic continuation and monodromy */
