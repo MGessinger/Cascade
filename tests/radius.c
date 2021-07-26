@@ -5,7 +5,8 @@
 int main ()
 {
 	int return_value = 0;
-	acb_ode_t ode = acb_ode_legendre(4);
+	acb_ode_t ode;
+	acb_ode_legendre(ode, 4);
 	arb_t rad;
 	arb_init(rad);
 	radius_of_convergence(rad, ode, 20, 1024);

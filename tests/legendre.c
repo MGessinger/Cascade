@@ -4,7 +4,8 @@
 
 int main ()
 {
-	acb_ode_t ode = acb_ode_legendre(5);
+	acb_ode_t ode;
+	acb_ode_legendre(ode, 5);
 	acb_t exp;
 	acb_init(exp);
 

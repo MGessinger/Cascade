@@ -3,7 +3,7 @@
 **acb_ode.h** -- Complex Differential Equations
 ========================================================================
 
-An :type:`acb_ode_t` represents an ordinary, linear differential operator with complex polynomial coefficients and error bounds. The polynomials are implemented as an array of type :type:`acb_struct`. The order of the differential equation as well as the polynomial degrees are tracked internally and need no further care by the user.
+An :type:`acb_ode_t` represents an ordinary, linear differential operator with complex polynomial coefficients and error bounds. They are implemented as an array of type :type:`acb_struct`. The order of the differential equation as well as the polynomial degrees are tracked internally and need no further care by the user.
 
 Types, macros and constants
 ------------------------------
@@ -13,15 +13,15 @@ Types, macros and constants
 
 	Contains a pointer to an array of the coefficients, the maximum degree of all the polynomials and the order of the ODE.
 
-	An `acb_ode_t` is defined as a pointer of type `acb_ode_struct`, permitting an `acb_ode_t` to be passed by reference.
+	An `acb_ode_t` is defined as an array of type `acb_ode_struct` of length 1, permitting an `acb_ode_t` to be passed by reference.
 
 .. macro:: diff_eq_poly (ODE, i)
 
-	Macro returning a pointer to the polynomial belonging to the *i-th* derivative.
+	Macro returning a pointer to the coefficient belonging to the *i-th* derivative. It is of type `acb_ptr`.
 
 .. macro:: diff_eq_coeff (ODE, i ,j)
 
-	Macro returning a pointer to the *j-th* coefficient of the *i-th* polynomial. This macro is identical to *diff_eq_poly(ODE,i)->(j)*.
+	Macro returning a pointer to the *j-th* coefficient of the *i-th* polynomial. This macro is identical to *diff_eq_poly(ODE,i)->(j)*. It is of type `acb`.
 
 .. macro:: order (ODE)
 
@@ -34,13 +34,13 @@ Types, macros and constants
 Memory management
 ------------------------------------------------------------------------
 
-.. function:: acb_ode_t acb_ode_init_blank (slong degree, slong order)
+.. function:: void acb_ode_init_blank (acb_ode_t ODE, slong degree, slong order)
 
-	Returns a pointer of type `acb_ode_t`, which contains space for *order+1* polynomials of length no more than *degree+1*.
+	Initializes the variable *ODE* to have space for *order+1* polynomials of length no more than *degree+1*.
 
-.. function:: acb_ode_t acb_ode_init (acb_poly_t polys, slong order)
+.. function:: void acb_ode_init (acb_ode_t ODE, acb_poly_t polys, slong order)
 
-	Returns a pointer of type `acb_ode_t`, which has been initialized to contain *polys*.
+	Initializes the variable *ODE* to contain *polys*.
 
 .. function:: void acb_ode_clear (acb_ode_t ODE)
 
@@ -52,16 +52,16 @@ Memory management
 Manipulation
 ------------------------------------------------------------------------
 
-.. function:: acb_ode_t acb_ode_set (acb_ode_t dest, acb_ode_t src)
+.. function:: void acb_ode_set (acb_ode_t dest, acb_ode_t src)
 
-	Copies data from *src* to *dest*. If *dest* is *NULL*, a new `acb_ode_t` will be initialised and returned, otherwise only the data will be copied over.
+	Copies data from *src* to *dest*. The variable *dest* must be initialized by a previous call to `acb_ode_init`, but it need not be of the same size as *src* (in which case it is reallocated).
 
 	.. note::
-		`acb_ode_set` creates a deep copy of *src* and is therefore rather slow! If *dest* is *NULL*, a pointer to a new `acb_ode_struct` is returned, otherwise *dest* itself will be returned. In either case, the return value should not be ignored but instead be stored in *dest*!
+		`acb_ode_set` creates a deep copy of *src* and is therefore rather slow!
 
 .. function:: slong acb_ode_reduce (acb_ode_t ODE)
 
-	Finds the highest power of *z* that divides every polynomial and uses that to simplify the equation. The return value contains the exponent of z, that the equation was divided by.
+	Divides the differential operator defined by *ODE* by the largest common factor of :math:`z^n`, that is shared by all coefficients. Returns the exponent *n*.
 
 .. function:: slong acb_ode_valuation (acb_ode_t ODE)
 
@@ -69,11 +69,11 @@ Manipulation
 
 .. function:: void acb_ode_shift (acb_ode_t ODE_out, acb_ode_t ODE_in, acb_t a, slong bits)
 
-	Transform the origin of *ODE_in* to *a* and store the result in ODE_out.
+	Transforms the origin of *ODE_in* to *a* and stores the result in ODE_out. Both *ODE_in* and *ODE_out* must be initialized.
 
 Input and Output
 ------------------------------------------------------------------------
 
 .. function:: void acb_ode_dump (acb_ode_t ODE, char* file)
 
-	Dumps the data stored in the `acb_ode_struct` into *file*. If *file == NULL*, the output will be written to *stdout*.
+	Dumps the data stored in the `acb_ode_struct` into *file*. If *file* is *NULL*, the output will be written to *stdout*.

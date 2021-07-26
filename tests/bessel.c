@@ -7,7 +7,8 @@ int main ()
 	acb_t nu;
 	acb_init(nu);
 	acb_set_d(nu, 0.5);
-	acb_ode_t ode = acb_ode_bessel(nu, 1024);
+	acb_ode_t ode;
+	acb_ode_bessel(ode, nu, 1024);
 
 	acb_set_si(nu, 1);
 	int return_value = 0;

@@ -24,32 +24,27 @@ static short interpret (acb_poly_t *polys, acb_ode_t ODE)
 
 /* Setup and memory management*/
 
-acb_ode_t acb_ode_init_blank (slong degree, slong order)
+void acb_ode_init_blank (acb_ode_t ODE, slong degree, slong order)
 {
-	if (degree < 0 || order <= 0)
-		return NULL;
 	/* Prepare the Differential equation for later use */
-	acb_ode_t ODE = flint_malloc(sizeof(acb_ode_struct));
-	if (ODE == NULL)
-		return NULL;
 	order(ODE) = order;
 	degree(ODE) = degree;
+	ODE->polys = NULL;
+	if (degree < 0 || order <= 0)
+		return;
 	ODE->polys = _acb_vec_init((order(ODE)+1)*(degree(ODE)+1));
-	return ODE;
 }
 
-acb_ode_t acb_ode_init (acb_poly_t *polys, slong order)
+void acb_ode_init (acb_ode_t ODE, acb_poly_t *polys, slong order)
 {
 	/* Create a differential operator defined by *polys* */
-	acb_ode_t ODE = flint_malloc(sizeof(acb_ode_struct));
-	if (ODE == NULL)
-		return NULL;
 	order(ODE) = order;
 	if (interpret(polys, ODE) != 1)
-	{
-		flint_free(ODE);
-		return NULL;
-	}
+		return;
+
+	ODE->polys = NULL;
+	if (degree(ODE) < 0 || order(ODE) <= 0)
+		return;
 	ODE->polys = _acb_vec_init((order(ODE)+1)*(degree(ODE)+1));
 	for (slong i = 0; i <= order(ODE); i++)
 	{
@@ -60,36 +55,35 @@ acb_ode_t acb_ode_init (acb_poly_t *polys, slong order)
 			acb_poly_get_coeff_acb(diff_eq_coeff(ODE, i, j), polys[i], j);
 		}
 	}
-	return ODE;
 }
 
 void acb_ode_clear (acb_ode_t ODE)
 {
+	if (degree(ODE) < 0 || order(ODE) <= 0)
+		return;
 	/* Free memory allocated for ODE*/
 	_acb_vec_clear(diff_eq_poly(ODE, 0), (order(ODE)+1)*(degree(ODE)+1));
-	flint_free(ODE);
-	return;
 }
 
-acb_ode_t acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in)
+void acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in)
 {
-	/* Copy data from ODE_in to an existing ODE structure or create a new one */
-	if (ODE_out == NULL)
-		ODE_out = acb_ode_init_blank(degree(ODE_in), order(ODE_in));
-
-	_acb_vec_set(diff_eq_poly(ODE_out, 0), diff_eq_poly(ODE_in, 0), (order(ODE_in)+1)*(degree(ODE_in)+1));
-	return ODE_out;
+	if (  (degree(ODE_out) != degree(ODE_in))
+	   || (order(ODE_out) != order(ODE_in))   )
+	{
+		acb_ode_clear(ODE_out);
+		acb_ode_init_blank(ODE_out, order(ODE_in), degree(ODE_in));
+	}
+	_acb_vec_set(ODE_out->polys, ODE_in->polys, (order(ODE_in)+1)*(degree(ODE_in)+1));
 }
 
 void acb_ode_set_poly (acb_ode_t ODE, acb_poly_t poly, slong index)
 {
 	if (index < 0 || index > order(ODE)+1)
 		return;
-	slong len = acb_poly_length(poly);
-	if (len > degree(ODE)+1)
-		len = degree(ODE)+1;    /* Automatically truncates */
-	_acb_vec_set(diff_eq_poly(ODE, index), acb_poly_get_coeff_ptr(poly, 0), len);
-	return;
+	slong deg = acb_poly_degree(poly);
+	if (deg > degree(ODE))
+		deg = degree(ODE);    /* Automatically truncates */
+	_acb_vec_set(diff_eq_poly(ODE, index), acb_poly_get_coeff_ptr(poly, 0), deg+1);
 }
 
 /* I/O */
@@ -126,15 +120,10 @@ void acb_ode_shift (acb_ode_t ODE_out, acb_ode_t ODE_in, acb_srcptr a, slong bit
 	acb_ode_set(ODE_out, ODE_in);
 	if (acb_is_zero(a))
 		return;
-	if (degree(ODE_out) == 0)
+	if (degree(ODE_in) == 0)
 		return;
 	for (slong j = 0; j <= order(ODE_out); j++)
-	{
-		if (diff_eq_poly(ODE_out, j) == NULL)
-			continue;
 		_acb_poly_taylor_shift(diff_eq_poly(ODE_out, j), a, degree(ODE_out)+1, bits);
-	}
-	return;
 }
 
 slong acb_ode_reduce (acb_ode_t ODE)
@@ -150,13 +139,13 @@ slong acb_ode_reduce (acb_ode_t ODE)
 	reduced -= 1; /* From the loop body */
 	if (reduced <= 0)
 		return 0;
-	acb_ode_t newODE = acb_ode_init_blank(degree(ODE)-reduced, order(ODE));
+	acb_ode_t newODE;
+	acb_ode_init_blank(newODE, degree(ODE)-reduced, order(ODE));
 	for (slong i = 0; i<= order(ODE); i++)
 		_acb_poly_shift_right(diff_eq_poly(newODE, i), diff_eq_poly(ODE, i), degree(ODE)+1, reduced);
 	free(ODE->polys);
 	ODE->polys = newODE->polys;
 	degree(ODE) -= reduced;
-	free(newODE);
 	return reduced;
 }
 

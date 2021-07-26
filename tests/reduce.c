@@ -8,7 +8,8 @@ int main ()
 	acb_init(z);
 	acb_zero(z);
 
-	acb_ode_t ode = acb_ode_bessel(z, 1024);
+	acb_ode_t ode;
+	acb_ode_bessel(ode, z, 1024);
 	slong red = acb_ode_reduce(ode);
 
 	acb_ode_clear(ode);

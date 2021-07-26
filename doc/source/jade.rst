@@ -51,7 +51,7 @@ Memory Management
 Special Equations
 -------------------
 
-	Cascade contains a few predefined differential equations. Jade can access those equations by calling to Cascade through one of the following functions. Because Jade however stores the polynomials directly, a polynomial ring has to be specified explicitly. From this ring the precision will be determined.
+Cascade contains a few predefined differential equations. Jade can access those equations by calling to Cascade through one of the following functions. Because Jade however stores the polynomials directly, a polynomial ring has to be specified explicitly. From this ring the precision will be determined.
 
 .. function:: Jade.acb_ode_legendre(R::Acb_poly_ring, n::Integer)
 
@@ -68,22 +68,18 @@ Special Equations
 Arithmetic
 --------------
 
-	Simple arithmetic has been implemented to work with varibles of type *diff_op*. Addition and subtraction as well as multiplication and division by a scalar are implemented as method extensions to the +,-,*,/ functions of the Base package.
-	Due to limitations in Nemo's type promotion (e.g. from *fmpz* to *acb*), multiplication might fail if the types are incomptible. However all Julia base types are fully supported.
+Simple arithmetic has been implemented to work with varibles of type *diff_op*. Addition and subtraction as well as multiplication and division by a scalar are implemented as method extensions to the +,-,*,/ functions of the Base package.
+Due to limitations in Nemo's type promotion (e.g. from *fmpz* to *acb*), multiplication might fail if the types are incomptible. However all Julia base types are fully supported.
 
-	Because a variable of type :type:`jade_ode` represents a differential operator, they are callable on any polynomial, that supports Nemo's *derivative* function.
+Because a variable of type :type:`jade_ode` represents a differential operator, they are callable on any polynomial, that supports Nemo's *derivative* function.
 
 Solving ODEs
 --------------------
-
-.. function:: Jade.set_polynomial(ode::acb_ode, index::Integer, polynomial::acb_poly)
-
-	Replace the polynomial at *index* by *polynomial*. If *ode* has already been translated before, the data will be cleared first. *order* will be adjusted accordingly. Remember that Julia counts from 1!
 
 .. function:: Jade.power_series(ode::acb_ode,p::acb_poly,n::Integer)
 
 	Copute a power series solution of *ode*, which converges when evaluated at *target*, through Cascade. The precision is automatically determined from the polynomials in *ode*. The inital values are taken from *p*, which also stores the result.
 
-.. function:: Jade.monodromy(ode::acb_ode,z0=0)
+.. function:: Jade.monodromy(ode::acb_ode)
 
-	Compute the monodromy matrix of *ode* around *z0* through Cascade. The value of *z0* defaults to zero.
+	Compute the monodromy matrix of *ode* about the origin through Cascade.

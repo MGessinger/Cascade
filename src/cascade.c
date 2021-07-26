@@ -129,7 +129,8 @@ void analytic_continuation (acb_poly_t res, acb_ode_t ODE, acb_srcptr path,
 {
 	/* Evaluate a solution along the given piecewise linear path */
 	acb_t a; acb_init(a);
-	acb_ode_t ODE_shift = acb_ode_init_blank(degree(ODE), order(ODE));
+	acb_ode_t ODE_shift;
+	acb_ode_init_blank(ODE_shift, degree(ODE), order(ODE));
 	for (slong time = 0; time+1 < len; time++)
 	{
 		acb_ode_shift(ODE_shift, ODE, path+time, bits);
@@ -139,23 +140,13 @@ void analytic_continuation (acb_poly_t res, acb_ode_t ODE, acb_srcptr path,
 	}
 	acb_ode_clear(ODE_shift);
 	acb_clear(a);
-	return;
 }
 
-void find_monodromy_matrix (acb_mat_t mono, acb_ode_t ODE, acb_t z0, slong bits)
+void find_monodromy_matrix (acb_mat_t mono, acb_ode_t ODE, slong bits)
 {
-	if (ODE == NULL)
-	{
-		flint_printf("No differential operator was provided. Please confirm your input.\n");
-		return;
-	}
+	/* Choose a path for the analytic continuation */
 	arb_t rad_of_conv;
 	arb_init(rad_of_conv);
-	/* Move to the given singularity */
-	if (z0 != NULL && acb_is_finite(z0))
-		acb_ode_shift(ODE, ODE, z0, bits);
-
-	/* Choose a path for the analytic continuation */
 	radius_of_convergence(rad_of_conv, ODE, 40, bits);
 	if (arb_is_zero(rad_of_conv))
 		return;
@@ -173,7 +164,8 @@ void find_monodromy_matrix (acb_mat_t mono, acb_ode_t ODE, acb_t z0, slong bits)
 	_acb_vec_unit_roots(path, steps, steps, bits);
 	_acb_vec_scalar_mul_arb(path, path, steps, rad_of_conv, bits);
 
-	/* Find the number of coefficients necessary every time (I am abusing path+steps for this because I can) */
+	/* Find the number of coefficients necessary every time
+	 * (I am abusing path+steps for this because I can) */
 	acb_sub(path+steps, path, path+1, bits);
 	acb_abs(acb_realref(path+steps), path+steps, bits);
 	slong num_of_coeffs = truncation_order(acb_realref(path+steps), rad_of_conv, bits);
@@ -189,26 +181,13 @@ void find_monodromy_matrix (acb_mat_t mono, acb_ode_t ODE, acb_t z0, slong bits)
 		_acb_vec_set(acb_mat_entry_ptr(mono, i, 0), acb_poly_get_coeff_ptr(res, 0), order(ODE));
 	}
 	acb_mat_transpose(mono, mono);
-	/* Move back to the start */
-	if (z0 != NULL && acb_is_finite(z0))
-	{
-		acb_neg(z0, z0);
-		acb_ode_shift(ODE, ODE, z0, bits);
-		acb_neg(z0, z0);
-	}
 	acb_poly_clear(res);
 	_acb_vec_clear(path, steps+1);
-	return;
 }
 
 void radius_of_convergence (arb_t rad_of_conv, acb_ode_t ODE, slong n, slong bits)
 {
 	/* Find the radius of convergence of the power series expansion */
-	if (ODE == NULL)
-	{
-		arb_zero(rad_of_conv);
-		return;
-	}
 	slong deg = 0;
 	acb_ptr P = _acb_vec_init(degree(ODE)+1);
 	_acb_vec_set(P, diff_eq_poly(ODE, order(ODE)), degree(ODE)+1);
@@ -252,5 +231,4 @@ void radius_of_convergence (arb_t rad_of_conv, acb_ode_t ODE, slong n, slong bit
 	arb_clear(radius);
 	fmpq_clear(root);
 	_acb_vec_clear(P, degree(ODE)+1);
-	return;
 }

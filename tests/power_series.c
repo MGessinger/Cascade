@@ -6,7 +6,8 @@ int main ()
 	slong prec = 1024;
 	acb_t z; acb_init(z);
 	acb_zero(z);
-	acb_ode_t ODE = acb_ode_bessel(z, prec);
+	acb_ode_t ODE;
+	acb_ode_bessel(ODE, z, prec);
 	acb_ode_reduce(ODE);
 
 	acb_poly_t poly; acb_poly_init(poly);

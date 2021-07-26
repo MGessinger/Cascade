@@ -14,7 +14,8 @@ int main ()
 	acb_set_si(b, 2);
 	acb_set_si(c, 3);
 
-	acb_ode_t ode = acb_ode_hypgeom(a, b, c, 1024);
+	acb_ode_t ode;
+	acb_ode_hypgeom(ode, a, b, c, 1024);
 
 	acb_set_si(a, -2);
 	acb_set_si(b, -4);
