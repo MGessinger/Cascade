@@ -50,29 +50,6 @@ slong truncation_order (arb_t eta, arb_t alpha, slong bits)
 	return n;
 }
 
-void acb_poly_graeffe_transform (acb_ptr dest, acb_srcptr src, slong len, slong bits)
-{
-	/* Computes the Graeffe transform of src. In- and output can be aliased. */
-	slong q = (len-1)/2+1;
-	acb_ptr pe = _acb_vec_init(q);
-	acb_ptr po = _acb_vec_init(len);
-	for (slong i = len-1; i >= 0; i--)
-	{
-		if (i % 2 == 0)
-			acb_set(pe+i/2, src+i);
-		else
-			acb_set(po+i/2, src+i);
-	}
-	_acb_poly_mul(dest, po, q, po, q, bits);
-	_acb_poly_shift_left(dest, dest, len-1, 1);
-	_acb_poly_mul(po, pe, q, pe, q, bits);
-	_acb_vec_sub(dest, po, dest, len, bits);
-
-	_acb_vec_clear(pe, q);
-	_acb_vec_clear(po, len);
-	return;
-}
-
 void acb_ode_solve_fuchs (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, slong bits)
 {
 	/* Iteratively compute the first num_of_coeffs coefficients of the power series solution of the ODE around zero */
@@ -206,7 +183,7 @@ void radius_of_convergence (arb_t rad_of_conv, acb_ode_t ODE, slong n, slong bit
 
 	/* Graeffe Transform */
 	for (slong counter = 0; counter < n; counter++)
-		acb_poly_graeffe_transform(P, P, deg+1, bits);
+		_acb_poly_graeffe_transform(P, P, deg+1, bits);
 
 	/* Evaluation */
 	fmpq_t root;

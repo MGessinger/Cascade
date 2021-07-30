@@ -56,7 +56,3 @@ Functions
 		R < 2 min\{\left| \frac{a_n}{a_k} \right| ^{1/k} \mid a_k \neq 0 \}.
 
 	The inverse of this bound then yields a lower bound on the distance to the nearest singular point of *ODE*.
-
-.. function:: void acb_poly_graeffe_transform (acb_ptr dest, acb_srcptr src, slong len, slong bits)
-
-	Computes the Graeffe Transform of src and stores the result in dest. Aliasing is allowed.

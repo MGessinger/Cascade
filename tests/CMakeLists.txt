@@ -2,7 +2,6 @@ set(Tests
 	legendre
 	bessel
 	hypgeom
-	graeffe
 	radius
 	reduce
 	power_series
