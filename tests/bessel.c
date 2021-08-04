@@ -12,14 +12,14 @@ int main ()
 
 	acb_set_si(nu, 1);
 	int return_value = 0;
-	if (!acb_contains(diff_eq_coeff(ode, 2, 2), nu))
+	if (!acb_contains(acb_ode_coeff(ode, 2, 2), nu))
 		return_value = 1;
-	else if (!acb_contains(diff_eq_coeff(ode, 1, 1), nu))
+	else if (!acb_contains(acb_ode_coeff(ode, 1, 1), nu))
 		return_value = 1;
-	else if (!acb_contains(diff_eq_coeff(ode, 0, 2), nu))
+	else if (!acb_contains(acb_ode_coeff(ode, 0, 2), nu))
 		return_value = 1;
 	acb_set_d(nu, -0.25);
-	if (!acb_contains(diff_eq_coeff(ode, 0, 0), nu))
+	if (!acb_contains(acb_ode_coeff(ode, 0, 0), nu))
 		return_value = 1;
 
 	acb_ode_clear(ode);

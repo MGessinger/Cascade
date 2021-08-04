@@ -68,7 +68,7 @@ void acb_ode_solve_fuchs (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, sl
 		slong exp = b_max - v;
 		/* Loop through the known coefficients of the power series */
 		slong b_min = clamp(exp - degree(ODE), 0, b_max);
-		acb_set(temp2, diff_eq_coeff(ODE, 0, exp-b_min));
+		acb_set(temp2, acb_ode_coeff(ODE, 0, exp-b_min));
 		slong b = b_min;
 		do {
 			acb_poly_get_coeff_acb(temp1, res, b);
@@ -83,7 +83,7 @@ void acb_ode_solve_fuchs (acb_poly_t res, acb_ode_t ODE, slong num_of_coeffs, sl
 			i_max = clamp(b - b_min, 0, order(ODE));
 			for (slong i = i_min; i <= i_max; i++)
 			{
-				acb_set(temp1, diff_eq_coeff(ODE, i, i + exp - b));
+				acb_set(temp1, acb_ode_coeff(ODE, i, i + exp - b));
 				acb_mul_fmpz(temp1, temp1, fac, bits);
 				acb_add(temp2, temp2, temp1, bits);
 				fmpz_mul_si(fac, fac, b-i);
@@ -167,7 +167,7 @@ void radius_of_convergence (arb_t rad_of_conv, acb_ode_t ODE, slong n, slong bit
 	/* Find the radius of convergence of the power series expansion */
 	slong deg = 0;
 	acb_ptr P = _acb_vec_init(degree(ODE)+1);
-	_acb_vec_set(P, diff_eq_poly(ODE, order(ODE)), degree(ODE)+1);
+	_acb_vec_set(P, acb_ode_poly(ODE, order(ODE)), degree(ODE)+1);
 	deg = degree(ODE);
 	for (slong i = 0; i < deg/2; i++)
 		acb_swap(P+i, P+deg-i);

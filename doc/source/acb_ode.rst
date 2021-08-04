@@ -15,13 +15,13 @@ Types, macros and constants
 
 	An `acb_ode_t` is defined as an array of type `acb_ode_struct` of length 1, permitting an `acb_ode_t` to be passed by reference.
 
-.. macro:: diff_eq_poly (ODE, i)
+.. macro:: acb_ode_poly (ODE, i)
 
 	Macro returning a pointer to the coefficient belonging to the *i-th* derivative. It is of type `acb_ptr`.
 
-.. macro:: diff_eq_coeff (ODE, i ,j)
+.. macro:: acb_ode_coeff (ODE, i ,j)
 
-	Macro returning a pointer to the *j-th* coefficient of the *i-th* polynomial. This macro is identical to *diff_eq_poly(ODE,i)->(j)*. It is of type `acb`.
+	Macro returning a pointer to the *j-th* coefficient of the *i-th* polynomial. This macro is identical to *acb_ode_poly(ODE,i)->(j)*. It is of type `acb`.
 
 .. macro:: order (ODE)
 

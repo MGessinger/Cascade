@@ -11,12 +11,12 @@ int main ()
 
 	int return_value = 0;
 	acb_set_si(exp, 30);
-	if (!acb_contains(diff_eq_coeff(ode, 0, 0), exp))
+	if (!acb_contains(acb_ode_coeff(ode, 0, 0), exp))
 		return_value = 1;
-	else if (!acb_contains_zero(diff_eq_coeff(ode, 1, 0)))
+	else if (!acb_contains_zero(acb_ode_coeff(ode, 1, 0)))
 		return_value = 1;
 	acb_set_si(exp, -1);
-	if (!acb_contains(diff_eq_coeff(ode, 2, 2), exp))
+	if (!acb_contains(acb_ode_coeff(ode, 2, 2), exp))
 		return_value = -1;
 
 	acb_clear(exp);

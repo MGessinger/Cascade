@@ -48,7 +48,7 @@ void acb_ode_init (acb_ode_t ODE, acb_poly_t *polys, slong order)
 			continue;
 		for (slong j = 0; j < acb_poly_length(polys[i]); j++)
 		{
-			acb_poly_get_coeff_acb(diff_eq_coeff(ODE, i, j), polys[i], j);
+			acb_poly_get_coeff_acb(acb_ode_coeff(ODE, i, j), polys[i], j);
 		}
 	}
 }
@@ -88,10 +88,10 @@ void acb_ode_dump (acb_ode_t ODE, char *file)
 	flint_fprintf(out, "Order: %w\nDegree: %w\n", order(ODE), degree(ODE));
 	for (slong i = 0; i <= order(ODE); i++)
 	{
-		flint_fprintf(out, "diff_eq_poly(ODE, %w) = ", i);
+		flint_fprintf(out, "acb_ode_poly(ODE, %w) = ", i);
 		for (slong j = 0; j <= degree(ODE); j++)
 		{
-			acb_fprintd(out, diff_eq_coeff(ODE, i, j), 20);
+			acb_fprintd(out, acb_ode_coeff(ODE, i, j), 20);
 			flint_fprintf(out, "\t");
 		}
 		flint_fprintf(out, "\n");
@@ -111,7 +111,7 @@ void acb_ode_shift (acb_ode_t ODE_out, acb_ode_t ODE_in, acb_srcptr a, slong bit
 	if (degree(ODE_in) == 0)
 		return;
 	for (slong j = 0; j <= order(ODE_out); j++)
-		_acb_poly_taylor_shift(diff_eq_poly(ODE_out, j), a, degree(ODE_out)+1, bits);
+		_acb_poly_taylor_shift(acb_ode_poly(ODE_out, j), a, degree(ODE_out)+1, bits);
 }
 
 slong acb_ode_reduce (acb_ode_t ODE)
@@ -121,7 +121,7 @@ slong acb_ode_reduce (acb_ode_t ODE)
 	int all_zero = 1;
 	do {
 		for (slong i = 0; i < order(ODE); i++)
-			all_zero &= acb_is_zero(diff_eq_coeff(ODE, i, reduced));
+			all_zero &= acb_is_zero(acb_ode_coeff(ODE, i, reduced));
 		reduced++;
 	} while (all_zero);
 	reduced -= 1; /* From the loop body */
@@ -141,7 +141,7 @@ slong acb_ode_valuation (acb_ode_t ODE)
 	for (int i = 0; i <= order(ODE); i++)
 	{
 		slong v = i;
-		while (acb_is_zero(diff_eq_coeff(ODE, i, i-v)))
+		while (acb_is_zero(acb_ode_coeff(ODE, i, i-v)))
 			v--;
 
 		if (v > val)

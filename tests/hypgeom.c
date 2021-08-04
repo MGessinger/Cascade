@@ -19,19 +19,19 @@ int main ()
 
 	acb_set_si(a, -2);
 	acb_set_si(b, -4);
-	if (!acb_contains(diff_eq_coeff(ode, 0, 0), a))
+	if (!acb_contains(acb_ode_coeff(ode, 0, 0), a))
 		return_value = 1;
-	else if (!acb_contains(diff_eq_coeff(ode, 1, 1), b))
+	else if (!acb_contains(acb_ode_coeff(ode, 1, 1), b))
 		return_value = 1;
-	else if (!acb_contains(diff_eq_coeff(ode, 1, 0), c))
+	else if (!acb_contains(acb_ode_coeff(ode, 1, 0), c))
 		return_value = 1;
 	acb_set_si(a, 1);
 	acb_set_si(b, -1);
-	if (!acb_contains_zero(diff_eq_coeff(ode, 2, 0)))
+	if (!acb_contains_zero(acb_ode_coeff(ode, 2, 0)))
 		return_value = 1;
-	else if (!acb_contains(diff_eq_coeff(ode, 2, 1), a))
+	else if (!acb_contains(acb_ode_coeff(ode, 2, 1), a))
 		return_value = 1;
-	else if (!acb_contains(diff_eq_coeff(ode, 2, 2), b))
+	else if (!acb_contains(acb_ode_coeff(ode, 2, 2), b))
 		return_value = 1;
 
 	acb_clear(a);
