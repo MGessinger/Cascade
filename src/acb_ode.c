@@ -66,13 +66,14 @@ void acb_ode_clear (acb_ode_t ODE)
 
 void acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in)
 {
-	if (  (degree(ODE_out) != degree(ODE_in))
-	   || (order(ODE_out) != order(ODE_in))   )
+	if (ODE_out->alloc < ODE_in->alloc)
 	{
 		acb_ode_clear(ODE_out);
 		acb_ode_init_blank(ODE_out, order(ODE_in), degree(ODE_in));
 	}
 	_acb_vec_set(ODE_out->polys, ODE_in->polys, ODE_in->alloc);
+	degree(ODE_out) = degree(ODE_in);
+	order(ODE_out) = order(ODE_in);
 }
 
 /* I/O */
