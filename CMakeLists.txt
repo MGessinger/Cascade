@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
 project(Cascade VERSION 1.0 DESCRIPTION "Cascade - the C Library for Approximative Solutions to Complex Arbitrary precision Differential Equations")
 
-foreach (LIB flint arb)
+set(DEPS gmp flint arb)
+
+foreach (LIB ${DEPS})
 	find_library(${LIB}_LIBRARY NAMES ${LIB})
 	if (NOT ${LIB}_LIBRARY)
 		message(FATAL_ERROR "~~ Library ${LIB} was not found.")
@@ -28,7 +30,7 @@ set(CascadeHeaders
 )
 
 add_library(cascade SHARED ${CascadeSrc})
-target_link_libraries(cascade flint arb)
+target_link_libraries(cascade ${DEPS})
 target_compile_options(cascade PRIVATE -Wall -Wextra -pedantic)
 
 set_target_properties(cascade PROPERTIES PUBLIC_HEADER "${CascadeHeaders}")

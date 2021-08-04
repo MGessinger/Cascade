@@ -12,6 +12,7 @@
 typedef struct acb_ode_struct {
 	slong order;
 	slong degree;
+	slong alloc;
 	acb_ptr polys;
 } acb_ode_struct;
 
