@@ -3,7 +3,7 @@
 int main ()
 {
 	int return_value = EXIT_SUCCESS;
-	slong prec, degree, order;
+	slong prec;
 
 	flint_rand_t state;
 	acb_ode_t ODE;
@@ -18,21 +18,16 @@ int main ()
 	for (slong iter = 0; iter < 100; iter++)
 	{
 		prec = 2 + n_randint(state, 128);
-		degree = 2 + n_randint(state, 8);
-		order = n_randint(state, degree);
-		if (order <= 0)
-			order = 2;
 
-		acb_ode_init_blank(ODE, degree, order);
+		acb_ode_random(ODE, state, prec);
 		acb_ode_solution_init(sol, rho, 2, 0);
 
 		/* Setup */
-		for (slong i = 0; i <= order(ODE); i++)
-			for (slong j = i+1; j <= degree(ODE); j++)
-				acb_randtest(acb_ode_coeff(ODE, i, j), state, prec, 16);
-
-		acb_one(acb_ode_coeff(ODE, order, order));
-		acb_set_si(acb_ode_coeff(ODE, order-1, order-1), order-1);
+		for (slong i = 1; i <= order(ODE); i++)
+			for (slong j = 0; j < i; j++)
+				acb_zero(acb_ode_coeff(ODE, i, j));
+		acb_one(acb_ode_coeff(ODE, order(ODE), order(ODE)));
+		acb_set_si(acb_ode_coeff(ODE, order(ODE)-1, order(ODE)-1), order(ODE)-1);
 
 		acb_ode_solve_frobenius(sol, ODE, 32, prec);
 

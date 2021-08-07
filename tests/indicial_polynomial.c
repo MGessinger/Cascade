@@ -12,7 +12,7 @@ void assert_equal (const char *errMsg, acb_t exp, acb_t real)
 }
 
 int main () {
-	slong prec, degree, order, rho;
+	slong prec, rho;
 
 	acb_t num, exp;
 	acb_ode_t ODE;
@@ -30,18 +30,14 @@ int main () {
 
 	for (slong iter = 0; iter < 100; iter++)
 	{
-		rho = n_randint(state, 5);
-		prec = n_randint(state, 128);
-		degree = 2 + n_randint(state, 8);
-		order = n_randint(state, degree);
-		if (order <= 0)
-			order = 2;
+		rho = n_randint(state, 10);
+		prec = 2 + n_randint(state, 126);
 
 		/* Setup */
-		acb_ode_init_blank(ODE, degree, order);
-		for (slong i = 0; i <= order(ODE); i++)
-			for (slong j = i; j <= degree(ODE); j++)
-				acb_randtest(acb_ode_coeff(ODE, i, j), state, prec, 16);
+		acb_ode_random(ODE, state, prec);
+		for (slong i = 1; i <= order(ODE); i++)
+			for (slong j = 0; j < i; j++)
+				acb_zero(acb_ode_coeff(ODE, i, j));
 
 		acb_one(exp);
 		acb_poly_set_coeff_acb(poly, rho, exp);

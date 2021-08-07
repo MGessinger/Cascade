@@ -76,6 +76,22 @@ void acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in)
 	order(ODE_out) = order(ODE_in);
 }
 
+void acb_ode_random (acb_ode_t ode, flint_rand_t state, slong prec)
+{
+	slong degree, order;
+
+	degree = 2 + n_randint(state, 8);
+	order = n_randint(state, degree);
+	if (order <= 0)
+		order = 2;
+
+	acb_ode_init_blank(ode, degree, order);
+
+	for (slong i = 0; i <= order(ode); i++)
+		for (slong j = 0; j <= degree(ode); j++)
+			acb_randtest(acb_ode_coeff(ode, i, j), state, prec, 16);
+}
+
 /* I/O */
 
 void acb_ode_dump (acb_ode_t ODE, char *file)
@@ -188,7 +204,7 @@ int acb_ode_solves (acb_ode_t ODE, acb_poly_t res, slong deg, slong prec)
 	for (slong i = 0; i < deg; i++)
 	{
 		acb_poly_get_coeff_acb(coeff, out, i);
-		if (!acb_is_zero(coeff))
+		if (!acb_contains_zero(coeff))
 		{
 			solved = 0;
 			break;

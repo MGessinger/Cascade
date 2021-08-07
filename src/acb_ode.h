@@ -25,6 +25,7 @@ void	acb_ode_init_blank (acb_ode_t ODE, slong degree, slong order);
 void	acb_ode_init (acb_ode_t ODE, acb_poly_t *polys, slong order);
 void	acb_ode_clear (acb_ode_t ODE);
 void	acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in);
+void	acb_ode_random (acb_ode_t ode, flint_rand_t state, slong prec);
 
 /* I/O */
 void	acb_ode_dump (acb_ode_t ODE, char *file);

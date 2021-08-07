@@ -20,21 +20,15 @@ int main ()
 	{
 		p = n_randprime(state, 8, 1);
 		prec = 2 + n_randint(state, 62);
-		degree = 2 + n_randint(state, 8);
-		order = n_randint(state, degree);
-		if (order <= 0)
-			order = 2;
 
 		acb_poly_init2(result, 32);
 
-		acb_ode_init_blank(ODE, degree, order);
+		acb_ode_random(ODE, state, prec);
 
 		/* Setup */
 		for (slong i = 0; i <= order(ODE); i++)
-		{
-			for (slong j = i+1; j <= degree(ODE); j++)
-				acb_randtest(acb_ode_coeff(ODE, i, j), state, prec, 16);
-		}
+			for (slong j = 0; j <= i; j++)
+				acb_zero(acb_ode_coeff(ODE, i, j));
 		acb_one(acb_ode_coeff(ODE, order(ODE), order(ODE)));
 		acb_set_si(num, order(ODE) - 1);
 
