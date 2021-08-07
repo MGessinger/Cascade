@@ -19,14 +19,16 @@ add_subdirectory(tests)
 
 # Setup Cascade 
 set(CascadeSrc
-	src/cascade.c
 	src/acb_ode.c
+	src/acb_ode_solution.c
 	src/examples.c
+	src/solver_fuchs.c
+	src/solver_frobenius.c
 )
 
 set(CascadeHeaders
-	src/cascade.h
 	src/acb_ode.h
+	src/cascade.h
 )
 
 add_library(cascade SHARED ${CascadeSrc})

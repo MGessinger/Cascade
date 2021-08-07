@@ -1,15 +1,5 @@
 #include "cascade.h"
 
-static inline slong clamp (slong in, slong min, slong max)
-{
-	if (in < min)
-		return min;
-	else if (in > max)
-		return max;
-	else
-		return in;
-}
-
 slong truncation_order (arb_t eta, arb_t alpha, slong bits)
 {
 	/* Compute the number of coefficients necessary to obtain a truncation precision of 2^-bits */

@@ -150,3 +150,52 @@ slong acb_ode_valuation (acb_ode_t ODE)
 	}
 	return val;
 }
+
+/* Differential Action */
+
+void acb_ode_apply (acb_poly_t out, acb_ode_t ODE, acb_poly_t in, slong prec)
+{
+	acb_poly_t deriv, acc;
+	acb_poly_init(deriv);
+	acb_poly_init(acc);
+
+	acb_poly_set(deriv, in);
+	acb_poly_zero(out);
+	for (slong i = 0; i <= order(ODE); i++)
+	{
+		acb_poly_zero(acc);
+		for (slong j = 0; j <= degree(ODE); j++)
+			acb_poly_set_coeff_acb(acc, j, acb_ode_coeff(ODE, i, j));
+
+		acb_poly_mul(acc, acc, deriv, prec);
+		acb_poly_add(out, out, acc, prec);
+
+		acb_poly_derivative(deriv, deriv, prec);
+	}
+	acb_poly_clear(deriv);
+	acb_poly_clear(acc);
+}
+
+int acb_ode_solves (acb_ode_t ODE, acb_poly_t res, slong deg, slong prec)
+{
+	int solved = 1;
+	acb_t coeff;
+	acb_poly_t out;
+
+	acb_init(coeff);
+	acb_poly_init2(out, deg);
+	acb_ode_apply(out, ODE, res, prec * 3 / 2);
+	for (slong i = 0; i < deg; i++)
+	{
+		acb_poly_get_coeff_acb(coeff, out, i);
+		if (!acb_is_zero(coeff))
+		{
+			solved = 0;
+			break;
+		}
+	}
+
+	acb_poly_clear(out);
+	acb_clear(coeff);
+	return solved;
+}
