@@ -4,7 +4,7 @@ set(Tests
 	hypgeom
 	radius
 	reduce
-	power_series
+	power_series_fuchs
 
 	indicial_polynomial
 	power_series_singleton

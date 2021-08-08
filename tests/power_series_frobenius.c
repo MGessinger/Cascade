@@ -32,14 +32,18 @@ int main ()
 		acb_ode_solve_frobenius(sol, ODE, 32, prec);
 
 		int solved = acb_ode_solves(ODE, sol->gens + 0, 32, prec);
-		if (!solved)
-			return_value = EXIT_FAILURE;
 
 		acb_ode_clear(ODE);
 		acb_ode_solution_clear(sol);
+
+		if (!solved)
+		{
+			return_value = EXIT_FAILURE;
+			break;
+		}
 	}
 	acb_clear(rho);
 	flint_randclear(state);
 	flint_cleanup();
-	return EXIT_SUCCESS;
+	return return_value;
 }

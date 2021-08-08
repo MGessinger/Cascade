@@ -1,17 +1,9 @@
 #include "acb_ode.h"
 #include "cascade.h"
 
-void assert_equal (const char *errMsg, acb_t exp, acb_t real)
+int main ()
 {
-	if (acb_overlaps(exp, real))
-		return;
-	flint_printf("%s failed\n", errMsg);
-	flint_printf("Expected output: "); acb_printd(exp, 20); flint_printf("\n");
-	flint_printf("Actual output: "); acb_printd(real, 20); flint_printf("\n");
-	flint_abort();
-}
-
-int main () {
+	int return_value = EXIT_SUCCESS;
 	slong prec, rho;
 
 	acb_t num, exp;
@@ -39,6 +31,7 @@ int main () {
 			for (slong j = 0; j < i; j++)
 				acb_zero(acb_ode_coeff(ODE, i, j));
 
+		acb_poly_zero(poly);
 		acb_one(exp);
 		acb_poly_set_coeff_acb(poly, rho, exp);
 
@@ -51,24 +44,40 @@ int main () {
 			/* Directly compute the "indicial coefficient" */
 			acb_set_si(num, rho);
 			indicial_polynomial_evaluate(num, ODE, i, num, 0, prec);
-			assert_equal("Direct computation f(rho)", exp, num);
+			if (!acb_overlaps(exp, num))
+			{
+				return_value = EXIT_FAILURE;
+				break;
+			}
 
 			/* Compare to indicial polynomial */
 			acb_set_si(num, rho);
 			indicial_polynomial(indicial, ODE, i, 0, prec);
 			acb_poly_evaluate(num, indicial, num, prec);
-			assert_equal("Polynomial computation f(r)|r=rho", exp, num);
+			if (!acb_overlaps(exp, num))
+			{
+				return_value = EXIT_FAILURE;
+				break;
+			}
 
 			/* Compute f(0 + rho) instead of f(rho + 0) */
 			acb_zero(num);
 			indicial_polynomial_evaluate(num, ODE, i, num, rho, prec);
-			assert_equal("Direct computation f(0+rho)", exp, num);
+			if (!acb_overlaps(exp, num))
+			{
+				return_value = EXIT_FAILURE;
+				break;
+			}
 
 			/* Again, compare to indicial polynomial */
 			acb_zero(num);
 			indicial_polynomial(indicial, ODE, i, rho, prec);
 			acb_poly_evaluate(num, indicial, num, prec);
-			assert_equal("Polynomial computation f(r+rho)|r=0", exp, num);
+			if (!acb_overlaps(exp, num))
+			{
+				return_value = EXIT_FAILURE;
+				break;
+			}
 		}
 
 		acb_ode_clear(ODE);
@@ -81,5 +90,5 @@ int main () {
 	acb_clear(exp);
 	flint_randclear(state);
 	flint_cleanup();
-	return EXIT_SUCCESS;
+	return return_value;
 }

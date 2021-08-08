@@ -21,8 +21,6 @@ int main ()
 		p = n_randprime(state, 8, 1);
 		prec = 2 + n_randint(state, 62);
 
-		acb_poly_init2(result, 32);
-
 		acb_ode_random(ODE, state, prec);
 
 		/* Setup */
@@ -37,10 +35,14 @@ int main ()
 		acb_poly_shift_left(result, result, order(ODE) - 1);
 
 		int solved = acb_ode_solves(ODE, result, 30, prec);
-		if (!solved)
-			return_value = EXIT_FAILURE;
 
 		acb_ode_clear(ODE);
+
+		if (!solved)
+		{
+			return_value = EXIT_FAILURE;
+			break;
+		}
 	}
 	acb_clear(num);
 	acb_poly_clear(result);

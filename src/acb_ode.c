@@ -199,8 +199,9 @@ int acb_ode_solves (acb_ode_t ODE, acb_poly_t res, slong deg, slong prec)
 	acb_poly_t out;
 
 	acb_init(coeff);
-	acb_poly_init2(out, deg);
-	acb_ode_apply(out, ODE, res, prec * 3 / 2);
+	acb_poly_init(out);
+	acb_poly_fit_length(out, deg);
+	acb_ode_apply(out, ODE, res, prec);
 	for (slong i = 0; i < deg; i++)
 	{
 		acb_poly_get_coeff_acb(coeff, out, i);
