@@ -3,7 +3,7 @@
 int main ()
 {
 	int return_value = EXIT_SUCCESS;
-	slong p, prec, degree, order;
+	slong p, prec, degree, order, n;
 
 	acb_ode_t ODE;
 	acb_t num;
@@ -30,11 +30,13 @@ int main ()
 		acb_one(acb_ode_coeff(ODE, order(ODE), order(ODE)));
 		acb_set_si(num, order(ODE) - 1);
 
+		n = order(ODE) + n_randint(state, 32);
+
 		acb_poly_one(result);
-		_acb_ode_solve_frobenius(result, ODE, num, 32, prec);
+		_acb_ode_solve_frobenius(result, ODE, num, n, prec);
 		acb_poly_shift_left(result, result, order(ODE) - 1);
 
-		int solved = acb_ode_solves(ODE, result, 30, prec);
+		int solved = acb_ode_solves(ODE, result, n-1, prec);
 
 		acb_ode_clear(ODE);
 

@@ -5,10 +5,10 @@ int main ()
 {
 	int return_value = EXIT_SUCCESS;
 
-	slong prec, n, deg;
+	slong prec, n;
 
 	flint_rand_t state;
-	
+
 	acb_poly_t result;
 	acb_ode_t ODE;
 
@@ -24,13 +24,12 @@ int main ()
 			acb_one(acb_ode_coeff(ODE, order(ODE), order(ODE)));
 
 		n = order(ODE) + n_randint(state, 32);
-		deg = clamp(n - order(ODE), 0, n);
 
 		acb_poly_randtest(result, state, order(ODE) + 1, prec, 8);
 
 		acb_ode_solve_fuchs(result, ODE, n, prec);
 
-		int solved = acb_ode_solves(ODE, result, deg, prec);
+		int solved = acb_ode_solves(ODE, result, n-order(ODE), prec);
 
 		acb_ode_clear(ODE);
 

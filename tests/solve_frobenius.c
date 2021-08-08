@@ -3,7 +3,7 @@
 int main ()
 {
 	int return_value = EXIT_SUCCESS;
-	slong prec;
+	slong prec, n;
 
 	flint_rand_t state;
 	acb_ode_t ODE;
@@ -29,9 +29,11 @@ int main ()
 		acb_one(acb_ode_coeff(ODE, order(ODE), order(ODE)));
 		acb_set_si(acb_ode_coeff(ODE, order(ODE)-1, order(ODE)-1), order(ODE)-1);
 
-		acb_ode_solve_frobenius(sol, ODE, 32, prec);
+		n = order(ODE) + n_randint(state, 32);
 
-		int solved = acb_ode_solves(ODE, sol->gens + 0, 32, prec);
+		acb_ode_solve_frobenius(sol, ODE, n, prec);
+
+		int solved = acb_ode_solves(ODE, sol->gens + 0, n-1, prec);
 
 		acb_ode_clear(ODE);
 		acb_ode_solution_clear(sol);
