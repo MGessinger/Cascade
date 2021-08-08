@@ -4,13 +4,13 @@ set(Tests
 	hypgeom
 	radius
 	reduce
-	solve_fuchs
+	fuchs_solver
 
 	indicial_polynomial
-	solve_frobenius_singleton
+	singleton_frobenius_solver
 	solution_extend
 	solution_update
-	solve_frobenius
+	frobenius_solver
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/src)

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(Cascade VERSION 1.0 DESCRIPTION "Cascade - the C Library for Approximative Solutions to Complex Arbitrary precision Differential Equations")
+project(Cascade VERSION 1.0 LANGUAGES C DESCRIPTION "Cascade - the C Library for Approximative Solutions to Complex Arbitrary precision Differential Equations")
 
 set(DEPS gmp flint arb)
 
@@ -22,8 +22,8 @@ set(CascadeSrc
 	src/acb_ode.c
 	src/acb_ode_solution.c
 	src/examples.c
-	src/solver_fuchs.c
-	src/solver_frobenius.c
+	src/fuchs_solver.c
+	src/frobenius_solver.c
 )
 
 set(CascadeHeaders
