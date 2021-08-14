@@ -3,7 +3,7 @@
 int main ()
 {
 	int return_value = EXIT_SUCCESS;
-	slong p, prec, degree, order, n;
+	slong prec, degree, order, n;
 
 	acb_ode_t ODE;
 	acb_t num;
@@ -18,8 +18,8 @@ int main ()
 
 	for (slong iter = 0; iter < 100; iter++)
 	{
-		p = n_randprime(state, 8, 1);
-		prec = 2 + n_randint(state, 62);
+		prec = 30 + n_randint(state, 128);
+		n = 2 + n_randint(state, 30);
 
 		acb_ode_random(ODE, state, prec);
 
@@ -29,8 +29,6 @@ int main ()
 				acb_zero(acb_ode_coeff(ODE, i, j));
 		acb_one(acb_ode_coeff(ODE, order(ODE), order(ODE)));
 		acb_set_si(num, order(ODE) - 1);
-
-		n = order(ODE) + n_randint(state, 32);
 
 		acb_poly_one(result);
 		_acb_ode_solve_frobenius(result, ODE, num, n, prec);

@@ -19,11 +19,11 @@ int main ()
 
 	for (slong iter = 0; iter < 100; iter++)
 	{
-		prec = 2 + n_randint(state, 128);
-		n = n_randint(state, 10);
+		prec = 30 + n_randint(state, 128);
+		n = 2 + n_randint(state, 10);
 
 		acb_randtest(rho, state, prec, 16);
-		acb_ode_solution_init(sol, rho, n_randint(state, 5), 0);
+		acb_ode_solution_init(sol, rho, 1 + n_randint(state, 5), 0);
 
 		for (slong i = 0; i < n; i++)
 		{

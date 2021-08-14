@@ -21,14 +21,30 @@ void acb_ode_solution_clear (acb_ode_solution_t sol)
 	flint_free(sol->gens);
 }
 
+void acb_ode_solution_dump (acb_ode_solution_t sol)
+{
+	flint_printf("Solution adjoint to the exponent "); acb_printd(sol->rho, 15); flint_printf(" of multiplicity %w.\n", sol->multiplicity);
+	for (slong i = 0; i < sol->multiplicity; i++)
+	{
+		flint_printf("log(x)^%w *\t", sol->multiplicity - 1 - i);
+		acb_poly_printd(sol->gens + i, 15);
+		flint_printf("\n\n");
+	}
+	flint_printf("\n");
+}
+
 void _acb_ode_solution_update (acb_ode_solution_t sol, acb_poly_t f, slong prec)
 {
+	slong mu;
 	acb_struct *F;
 	acb_t temp1, temp2;
 
 	F = flint_malloc( sol->multiplicity * sizeof(acb_struct));
 	if (F == NULL)
 		return;
+
+	mu = sol->multiplicity - 1;
+
 	acb_init(temp1);
 	acb_init(temp2);
 
@@ -41,13 +57,13 @@ void _acb_ode_solution_update (acb_ode_solution_t sol, acb_poly_t f, slong prec)
 		acb_poly_derivative(f, f, prec);
 
 		acb_mul(F + k, F + k, temp2, prec);
-		acb_set_si(temp1, sol->multiplicity - 1 - k);
+		acb_set_si(temp1, mu - k);
 		acb_mul(temp2, temp2, temp1, prec);
 		acb_set_si(temp1, k + 1);
 		acb_div(temp2, temp2, temp1, prec);
 	}
 
-	for (slong n = sol->multiplicity - 1; n >= 0; n--)
+	for (slong n = mu; n >= 0; n--)
 	{
 		acb_poly_scalar_mul(sol->gens + n, sol->gens + n, F + 0, prec);
 		acb_set_si(temp2, n);

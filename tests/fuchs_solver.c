@@ -17,11 +17,11 @@ int main ()
 
 	for (slong iter = 0; iter < 100; iter++)
 	{
-		prec = 2 + n_randint(state, 126);
+		prec = 30 + n_randint(state, 128);
 
 		acb_ode_random(ODE, state, prec);
-		if (acb_contains_zero(acb_ode_coeff(ODE, order(ODE), order(ODE))))
-			acb_one(acb_ode_coeff(ODE, order(ODE), order(ODE)));
+		if (acb_contains_zero(acb_ode_coeff(ODE, order(ODE), 0)))
+			acb_one(acb_ode_coeff(ODE, order(ODE), 0));
 
 		n = order(ODE) + n_randint(state, 32);
 

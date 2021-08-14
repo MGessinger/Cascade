@@ -80,10 +80,8 @@ void acb_ode_random (acb_ode_t ode, flint_rand_t state, slong prec)
 {
 	slong degree, order;
 
-	degree = 2 + n_randint(state, 8);
-	order = n_randint(state, degree);
-	if (order <= 0)
-		order = 2;
+	degree = 3 + n_randint(state, 7);
+	order = 2 + n_randint(state, degree-2);
 
 	acb_ode_init_blank(ode, degree, order);
 
@@ -205,8 +203,17 @@ int acb_ode_solves (acb_ode_t ODE, acb_poly_t res, slong deg, slong prec)
 	for (slong i = 0; i < deg; i++)
 	{
 		acb_poly_get_coeff_acb(coeff, out, i);
-		if (!acb_contains_zero(coeff))
+		if (!acb_is_finite(coeff))
 		{
+			flint_printf("Coefficient %w/%w is infinite.\n", i, deg);
+			solved = 0;
+			break;
+		}
+		else if (!acb_contains_zero(coeff))
+		{
+			flint_printf("Coefficient %w/%w is non-zero.\n", i, deg);
+			acb_printd(coeff, 20);
+			flint_printf("\nPrecision %w.\n", prec);
 			solved = 0;
 			break;
 		}

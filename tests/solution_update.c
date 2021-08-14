@@ -24,7 +24,7 @@ int main ()
 	for (slong iter = 0; iter < 100; iter++)
 	{
 		n = n_randint(state, 10);
-		prec = 2 + n_randint(state, 64);
+		prec = 30 + n_randint(state, 128);
 
 		acb_randtest(rho, state, prec, 16);
 		acb_ode_solution_init(sol, rho, n_randint(state, 10), 0);
