@@ -3,7 +3,7 @@
 int main ()
 {
 	int return_value = EXIT_SUCCESS;
-	slong prec, n;
+	slong prec, n, s_rho;
 
 	flint_rand_t state;
 	acb_ode_t ODE;
@@ -17,26 +17,27 @@ int main ()
 
 	for (slong iter = 0; iter < 100; iter++)
 	{
-		prec = 2 + n_randint(state, 128);
-
-		acb_ode_random(ODE, state, prec);
-		acb_ode_solution_init(sol, rho, 2, 0);
+		prec = 30 + n_randint(state, 128);
+		n = 2 + n_randint(state, 30);
 
 		/* Setup */
-		for (slong i = 1; i <= order(ODE); i++)
-			for (slong j = 0; j < i; j++)
+		acb_ode_random(ODE, state, prec);
+		for (slong i = 0; i <= order(ODE); i++)
+			for (slong j = 0; j <= i; j++)
 				acb_zero(acb_ode_coeff(ODE, i, j));
 		acb_one(acb_ode_coeff(ODE, order(ODE), order(ODE)));
-		acb_set_si(acb_ode_coeff(ODE, order(ODE)-1, order(ODE)-1), order(ODE)-1);
+		acb_one(acb_ode_coeff(ODE, order(ODE)-1, order(ODE)-1));
 
-		n = order(ODE) + n_randint(state, 32);
+		s_rho = order(ODE) - 2;
+		acb_set_si(rho, s_rho);
+		acb_ode_solution_init(sol, rho, 2, 0);
 
 		acb_ode_solve_frobenius(sol, ODE, n, prec);
+		acb_poly_shift_left(sol->gens, sol->gens, s_rho);
+		int solved = acb_ode_solves(ODE, sol->gens, n, prec);
 
-		int solved = acb_ode_solves(ODE, sol->gens + 0, n-1, prec);
-
-		acb_ode_clear(ODE);
 		acb_ode_solution_clear(sol);
+		acb_ode_clear(ODE);
 
 		if (!solved)
 		{

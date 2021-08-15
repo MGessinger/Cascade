@@ -27,7 +27,7 @@ int main ()
 
 		/* Setup */
 		acb_ode_random(ODE, state, prec);
-		for (slong i = 1; i <= order(ODE); i++)
+		for (slong i = 0; i <= order(ODE); i++)
 			for (slong j = 0; j < i; j++)
 				acb_zero(acb_ode_coeff(ODE, i, j));
 
@@ -35,7 +35,7 @@ int main ()
 		acb_one(exp);
 		acb_poly_set_coeff_acb(poly, rho, exp);
 
-		acb_ode_apply(poly, ODE, poly, prec * 3);
+		acb_ode_apply(poly, ODE, poly, prec);
 
 		for (slong i = 0; i <= degree(ODE)+1; i++)
 		{
