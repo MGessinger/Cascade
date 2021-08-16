@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(Cascade VERSION 1.0 LANGUAGES C DESCRIPTION "Cascade - the C Library for Approximative Solutions to Complex Arbitrary precision Differential Equations")
+project(Cascade VERSION 2.0 LANGUAGES C DESCRIPTION "Cascade - the C Library for Approximative Solutions to Complex Arbitrary precision Differential Equations")
 
 set(DEPS gmp flint arb)
 
