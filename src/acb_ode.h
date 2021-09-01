@@ -52,7 +52,6 @@ typedef acb_ode_solution_struct acb_ode_solution_t[1];
 
 void	acb_ode_solution_init (acb_ode_solution_t sol, acb_t rho, slong mul, slong alpha);
 void	acb_ode_solution_clear (acb_ode_solution_t sol);
-void	acb_ode_solution_dump (acb_ode_solution_t sol);
 
 void	acb_ode_solution_evaluate (acb_t res, acb_ode_solution_t sol, acb_t x, slong mu);
 

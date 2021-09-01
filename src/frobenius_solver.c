@@ -143,8 +143,11 @@ void acb_ode_solve_frobenius (acb_ode_solution_t sol, acb_ode_t ODE, slong sol_d
 
 		/* Rescale the indicial polynomial, to keep coefficients small */
 		indicial_polynomial_evaluate(temp, ODE, 0, sol->rho, nu, prec);
-		acb_poly_scalar_div(indicial, indicial, temp, prec);
-		acb_poly_scalar_div(g_new, g_new, temp, prec);
+		if (!acb_contains_zero(temp))
+		{
+			acb_poly_scalar_div(indicial, indicial, temp, prec);
+			acb_poly_scalar_div(g_new, g_new, temp, prec);
+		}
 
 		/* Multiply all relevant g_nu(rho) by f(rho + nu) */
 		int all_zero = acb_poly_is_zero(g_new);
