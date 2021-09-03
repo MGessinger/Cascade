@@ -1,5 +1,53 @@
 #include "cascade.h"
 
+void radius_of_convergence (arb_t rad_of_conv, acb_ode_t ODE, slong n, slong bits)
+{
+	/* Find the radius of convergence of the power series expansion */
+	slong deg = 0;
+	acb_ptr P = _acb_vec_init(degree(ODE)+1);
+	_acb_vec_set(P, acb_ode_poly(ODE, order(ODE)), degree(ODE)+1);
+	deg = degree(ODE);
+	for (slong i = 0; i < deg/2; i++)
+		acb_swap(P+i, P+deg-i);
+	while (acb_contains_zero(P+deg))
+		deg--;
+	if (deg == 0)
+	{
+		/* There are no singularities (outside zero, possibly) */
+		arb_indeterminate(rad_of_conv);
+		_acb_vec_clear(P, degree(ODE)+1);
+		return;
+	}
+
+	/* Graeffe Transform */
+	for (slong counter = 0; counter < n; counter++)
+		_acb_poly_graeffe_transform(P, P, deg+1, bits);
+
+	/* Evaluation */
+	fmpq_t root;
+	fmpq_init(root);
+	fmpq_one(root);
+	fmpq_mul_2exp(root, root, n);
+	fmpq_inv(root, root);
+	_acb_poly_root_bound_fujiwara(arb_radref(rad_of_conv), P, deg+1);
+	arb_get_rad_arb(rad_of_conv, rad_of_conv);
+	arb_pow_fmpq(rad_of_conv, rad_of_conv, root, bits);
+	arb_inv(rad_of_conv, rad_of_conv, bits);
+
+	/* Error bound */
+	arb_t radius;
+	arb_init(radius);
+	arb_set_si(radius, 2*deg);
+	arb_pow_fmpq(radius, radius, root, bits);
+	arb_sub_si(radius, radius, 1, bits);
+	arb_mul(radius, rad_of_conv, radius, bits);
+	arb_add_error(rad_of_conv, radius);
+
+	arb_clear(radius);
+	fmpq_clear(root);
+	_acb_vec_clear(P, degree(ODE)+1);
+}
+
 slong truncation_order (arb_t eta, arb_t alpha, slong bits)
 {
 	/* Compute the number of coefficients necessary to obtain a truncation precision of 2^-bits */
@@ -150,52 +198,4 @@ void find_monodromy_matrix (acb_mat_t mono, acb_ode_t ODE, slong bits)
 	acb_mat_transpose(mono, mono);
 	acb_poly_clear(res);
 	_acb_vec_clear(path, steps+1);
-}
-
-void radius_of_convergence (arb_t rad_of_conv, acb_ode_t ODE, slong n, slong bits)
-{
-	/* Find the radius of convergence of the power series expansion */
-	slong deg = 0;
-	acb_ptr P = _acb_vec_init(degree(ODE)+1);
-	_acb_vec_set(P, acb_ode_poly(ODE, order(ODE)), degree(ODE)+1);
-	deg = degree(ODE);
-	for (slong i = 0; i < deg/2; i++)
-		acb_swap(P+i, P+deg-i);
-	while (acb_contains_zero(P+deg))
-		deg--;
-	if (deg == 0)
-	{
-		/* There are no singularities (outside zero, possibly) */
-		arb_indeterminate(rad_of_conv);
-		_acb_vec_clear(P, degree(ODE)+1);
-		return;
-	}
-
-	/* Graeffe Transform */
-	for (slong counter = 0; counter < n; counter++)
-		_acb_poly_graeffe_transform(P, P, deg+1, bits);
-
-	/* Evaluation */
-	fmpq_t root;
-	fmpq_init(root);
-	fmpq_one(root);
-	fmpq_mul_2exp(root, root, n);
-	fmpq_inv(root, root);
-	_acb_poly_root_bound_fujiwara(arb_radref(rad_of_conv), P, deg+1);
-	arb_get_rad_arb(rad_of_conv, rad_of_conv);
-	arb_pow_fmpq(rad_of_conv, rad_of_conv, root, bits);
-	arb_inv(rad_of_conv, rad_of_conv, bits);
-
-	/* Error bound */
-	arb_t radius;
-	arb_init(radius);
-	arb_set_si(radius, 2*deg);
-	arb_pow_fmpq(radius, radius, root, bits);
-	arb_sub_si(radius, radius, 1, bits);
-	arb_mul(radius, rad_of_conv, radius, bits);
-	arb_add_error(rad_of_conv, radius);
-
-	arb_clear(radius);
-	fmpq_clear(root);
-	_acb_vec_clear(P, degree(ODE)+1);
 }

@@ -1,5 +1,4 @@
 .. _Arb: http://arblib.org
-.. _Julia: https://julialang.org
 
 **Cascade** -- the C Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations
 ==============================================================================================================
@@ -13,14 +12,5 @@ Cascade's documentation
     :maxdepth: 2
 
     acb_ode.rst
+    acb_ode_solution.rst
     cascade.rst
-
-Jade's documentation
---------------------
-
-This project also includes :ref:`Jade`. It provides an intuitive interface to Cascade, which can be used from the Julia_ command line.
-
-..  toctree::
-    :maxdepth: 2
-
-    jade.rst
