@@ -104,7 +104,7 @@ void _acb_ode_solve_frobenius (acb_poly_t res, acb_ode_t ODE, acb_t rho, slong s
 
 void acb_ode_solve_frobenius (acb_ode_solution_t sol, acb_ode_t ODE, slong sol_degree, slong prec)
 {
-	if (sol->multiplicity == 1 && sol->alpha == 0)
+	if (sol->M == 1)
 	{
 		_acb_ode_solve_frobenius(sol->gens, ODE, sol->rho, sol_degree, prec);
 		return;
@@ -127,7 +127,7 @@ void acb_ode_solve_frobenius (acb_ode_solution_t sol, acb_ode_t ODE, slong sol_d
 		acb_poly_init(g_rho + i);
 	acb_poly_one(g_rho);
 
-	for (slong i = 0; i < sol->multiplicity + sol->alpha; i++)
+	for (slong i = 0; i < sol->M; i++)
 	{
 		acb_poly_zero(sol->gens + i);
 		acb_poly_fit_length(sol->gens + i, sol_degree + 1);

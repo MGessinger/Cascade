@@ -30,7 +30,7 @@ int main ()
 			acb_poly_randtest(f, state, 20, prec, 16);
 			acb_poly_set(g, f);
 			_acb_ode_solution_extend(sol, i, g, prec);
-			for (slong j = 0; j < sol->multiplicity; j++)
+			for (slong j = 0; j < sol->mul; j++)
 			{
 				acb_poly_evaluate(rho, f, sol->rho, prec);
 				acb_poly_get_coeff_acb(val, sol->gens + j, i);

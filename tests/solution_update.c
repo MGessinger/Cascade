@@ -44,7 +44,7 @@ int main ()
 		/* Check */
 		for (slong j = 0; j < n; j++)
 		{
-			for (slong i = 0; i < sol->multiplicity; i++)
+			for (slong i = 0; i < sol->mul; i++)
 			{
 				acb_poly_evaluate(rho, H + j, sol->rho, prec);
 				acb_poly_get_coeff_acb(val, sol->gens + i, j);

@@ -43,10 +43,10 @@ int	acb_ode_solves (acb_ode_t ODE, acb_poly_t res, slong deg, slong prec);
 /* =============================== Solutions ================================ */
 
 typedef struct {
-	acb_t rho;		/* root of the indicial equation */
-	slong multiplicity;	/* counts the number of roots equal to rho */
-	slong alpha;		/* alpha distinguishes roots within a group */
-	acb_poly_struct *gens;	/* contains the series g_ν and its derivatives */
+	acb_t rho;		/* characteristic exponent */
+	slong mul;		/* Multiplicity */
+	slong M;		/* position in the group */
+	acb_poly_struct *gens;	/* power series */
 } acb_ode_solution_struct;
 
 typedef acb_ode_solution_struct acb_ode_solution_t[1];
