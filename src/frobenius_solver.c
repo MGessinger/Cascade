@@ -5,38 +5,42 @@ void indicial_polynomial (acb_poly_t result, acb_ode_t ODE, slong nu, slong shif
 {
 	/* Compute f_ν(ρ-ς) [for definition of f, see Frobenius Paper, equation 3] */
 	acb_poly_zero(result);
+	nu += acb_ode_valuation(ODE);
 	if (nu > degree(ODE))
 		return;
 
-	acb_t temp1;
-	acb_poly_t horner;
+	acb_t temp1, temp2;
 
 	acb_init(temp1);
-	acb_poly_init(horner);
-
-	acb_one(temp1);
-	acb_poly_set_coeff_acb(horner, 1, temp1);
+	acb_init(temp2);
 
 	acb_poly_fit_length(result, order(ODE) + 1);
 
 	slong lambda = clamp(degree(ODE) - nu, 0, order(ODE));
 	for (; lambda >= 0; lambda--)
 	{
-		acb_set_si(temp1, shift - lambda);
-		acb_poly_set_coeff_acb(horner, 0, temp1);
-		acb_poly_mul(result, result, horner, prec);
-
+		for (slong j = acb_poly_length(result); j > 0; j--)
+		{
+			acb_poly_get_coeff_acb(temp1, result, j);
+			acb_poly_get_coeff_acb(temp2, result, j - 1);
+			acb_mul_si(temp1, temp1, shift - lambda, prec);
+			acb_add(temp1, temp2, temp1, prec);
+			acb_poly_set_coeff_acb(result, j, temp1);
+		}
 		acb_poly_get_coeff_acb(temp1, result, 0);
-		acb_add(temp1, temp1, acb_ode_coeff(ODE, lambda, lambda + nu), prec);
+		acb_mul_si(temp1, temp1, shift - lambda, prec);
+		if (lambda + nu >= 0)
+			acb_add(temp1, temp1, acb_ode_coeff(ODE, lambda, lambda + nu), prec);
 		acb_poly_set_coeff_acb(result, 0, temp1);
 	}
 
 	acb_clear(temp1);
-	acb_poly_clear(horner);
+	acb_clear(temp2);
 }
 
 void indicial_polynomial_evaluate (acb_t result, acb_ode_t ODE, slong nu, acb_t rho, slong shift, slong prec)
 {
+	nu += acb_ode_valuation(ODE);
 	if (nu > degree(ODE))
 	{
 		acb_zero(result);
@@ -53,6 +57,10 @@ void indicial_polynomial_evaluate (acb_t result, acb_ode_t ODE, slong nu, acb_t 
 	{
 		acb_add_si(temp1, rho, shift - lambda, prec);
 		acb_mul(out, out, temp1, prec);
+
+		if (lambda + nu < 0)
+			continue;
+
 		acb_add(out, out, acb_ode_coeff(ODE, lambda, lambda + nu), prec);
 	}
 	acb_set(result, out);
@@ -119,7 +127,7 @@ void acb_ode_solve_frobenius (acb_ode_solution_t sol, acb_ode_t ODE, slong sol_d
 		acb_poly_init(g_rho + i);
 	acb_poly_one(g_rho);
 
-	for (slong i = 0; i < sol->multiplicity; i++)
+	for (slong i = 0; i < sol->multiplicity + sol->alpha; i++)
 	{
 		acb_poly_zero(sol->gens + i);
 		acb_poly_fit_length(sol->gens + i, sol_degree + 1);

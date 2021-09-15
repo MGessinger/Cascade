@@ -1,5 +1,7 @@
 #include "acb_ode.h"
 
+#define UNDEFINED -0xFFFF
+
 /* Static function */
 
 static inline int max_degree (acb_poly_t *polys, slong order)
@@ -29,6 +31,7 @@ void acb_ode_init_blank (acb_ode_t ODE, slong degree, slong order)
 	ODE->degree = degree;
 	ODE->polys = NULL;
 	ODE->alloc = 0;
+	ODE->valuation = UNDEFINED;
 
 	if (degree < 0 || order <= 0)
 		return;
@@ -74,6 +77,7 @@ void acb_ode_set (acb_ode_t ODE_out, acb_ode_t ODE_in)
 	_acb_vec_set(ODE_out->polys, ODE_in->polys, ODE_in->alloc);
 	degree(ODE_out) = degree(ODE_in);
 	order(ODE_out) = order(ODE_in);
+	ODE_out->valuation = acb_ode_valuation(ODE_in);
 }
 
 void acb_ode_random (acb_ode_t ode, flint_rand_t state, slong prec)
@@ -147,21 +151,27 @@ slong acb_ode_reduce (acb_ode_t ODE)
 	for (slong i = 0; i<= order(ODE); i++)
 		_acb_poly_shift_right(ODE->polys + i*(new_deg+1), ODE->polys + i*(degree(ODE)+1), degree(ODE)+1, reduced);
 	degree(ODE) = new_deg;
+	ODE->valuation = UNDEFINED;
 	return reduced;
 }
 
 slong acb_ode_valuation (acb_ode_t ODE)
 {
-	slong val = 0;
+	if (ODE->valuation != UNDEFINED)
+		return ODE->valuation;
+
+	slong val = degree(ODE);
 	for (int i = 0; i <= order(ODE); i++)
 	{
-		slong v = i;
-		while (acb_is_zero(acb_ode_coeff(ODE, i, i-v)))
-			v--;
+		slong v = 0;
+		while (acb_is_zero(acb_ode_coeff(ODE, i, v)))
+			v++;
 
-		if (v > val)
+		v = v - i;
+		if (v < val)
 			val = v;
 	}
+	ODE->valuation = val;
 	return val;
 }
 
