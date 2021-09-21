@@ -69,18 +69,35 @@ void indicial_polynomial_evaluate (acb_t result, acb_ode_t ODE, slong nu, acb_t 
 	acb_clear(out);
 }
 
-void _acb_ode_solve_frobenius (acb_poly_t res, acb_ode_t ODE, acb_t rho, slong sol_degree, slong prec)
+void _acb_ode_solve_frobenius (acb_poly_t res, acb_ode_t ODE, acb_ode_solution_t rhs, slong sol_degree, slong prec)
 {
 	acb_t g_new, indicial, g_i;
 	acb_init(g_new);
 	acb_init(indicial);
 	acb_init(g_i);
 
+	acb_t rho;
+	acb_init(rho);
+	acb_set(rho, rhs->rho);
+
 	acb_poly_fit_length(res, sol_degree + 1);
-	acb_poly_one(res);
+	if (acb_poly_is_zero(rhs->gens))
+		acb_poly_one(res);
+	else
+	{
+		slong v = acb_ode_valuation(ODE);
+		acb_sub_si(rho, rho, v, prec);
+
+		acb_poly_get_coeff_acb(g_new, rhs->gens, 0);
+		indicial_polynomial_evaluate(indicial, ODE, 0, rho, 0, prec);
+		acb_div(g_new, g_new, indicial, prec);
+
+		acb_poly_set_coeff_acb(res, 0, g_new);
+	}
+
 	for (slong nu = 1; nu <= sol_degree; nu++)
 	{
-		acb_zero(g_new);
+		acb_poly_get_coeff_acb(g_new, rhs->gens, nu);
 
 		slong i = clamp(nu, 1, degree(ODE));
 		indicial_polynomial_evaluate(indicial, ODE, i, rho, nu - i, prec);
@@ -100,13 +117,14 @@ void _acb_ode_solve_frobenius (acb_poly_t res, acb_ode_t ODE, acb_t rho, slong s
 	acb_clear(g_new);
 	acb_clear(indicial);
 	acb_clear(g_i);
+	acb_clear(rho);
 }
 
 void acb_ode_solve_frobenius (acb_ode_solution_t sol, acb_ode_t ODE, slong sol_degree, slong prec)
 {
 	if (sol->M == 1)
 	{
-		_acb_ode_solve_frobenius(sol->gens, ODE, sol->rho, sol_degree, prec);
+		_acb_ode_solve_frobenius(sol->gens, ODE, sol, sol_degree, prec);
 		return;
 	}
 
