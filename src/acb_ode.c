@@ -131,6 +131,7 @@ void acb_ode_shift (acb_ode_t ODE_out, acb_ode_t ODE_in, acb_srcptr a, slong bit
 		return;
 	for (slong j = 0; j <= order(ODE_out); j++)
 		_acb_poly_taylor_shift(acb_ode_poly(ODE_out, j), a, degree(ODE_out)+1, bits);
+	ODE_out->valuation = UNDEFINED;
 }
 
 slong acb_ode_reduce (acb_ode_t ODE)
@@ -165,7 +166,11 @@ slong acb_ode_valuation (acb_ode_t ODE)
 	{
 		slong v = 0;
 		while (acb_is_zero(acb_ode_coeff(ODE, i, v)))
+		{
 			v++;
+			if (v > degree(ODE))
+				break;
+		}
 
 		v = v - i;
 		if (v < val)

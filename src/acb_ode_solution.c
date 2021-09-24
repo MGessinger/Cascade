@@ -84,3 +84,17 @@ void _acb_ode_solution_extend (acb_ode_solution_t sol, slong nu, acb_poly_t g_nu
 	acb_poly_zero(g_nu);
 	acb_clear(temp);
 }
+
+void _acb_ode_solution_normalize (acb_ode_solution_t sol, slong prec)
+{
+	acb_t t;
+	acb_init(t);
+
+	slong alpha = sol->M - sol->mul;
+	acb_poly_get_coeff_acb(t, sol->gens + alpha, 0);
+
+	for (slong i = 0; i < sol->M; i++)
+		acb_poly_scalar_div(sol->gens + i, sol->gens + i, t, prec);
+
+	acb_clear(t);
+}

@@ -58,6 +58,7 @@ void	acb_ode_solution_evaluate (acb_t res, acb_ode_solution_t sol, acb_t x, slon
 
 void	_acb_ode_solution_update (acb_ode_solution_t sol, acb_poly_t f, slong prec);
 void	_acb_ode_solution_extend (acb_ode_solution_t sol, slong nu, acb_poly_t g_nu, slong prec);
+void	_acb_ode_solution_normalize (acb_ode_solution_t sol, slong prec);
 
 /* ================================ Examples ================================ */
 

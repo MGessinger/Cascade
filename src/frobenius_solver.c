@@ -194,6 +194,8 @@ void acb_ode_solve_frobenius (acb_ode_solution_t sol, acb_ode_t ODE, slong sol_d
 			break;
 	}
 
+	_acb_ode_solution_normalize(sol, prec);
+
 	acb_poly_clear(g_new);
 	acb_poly_clear(indicial);
 	for (slong i = 0; i < degree(ODE); i++)
