@@ -6,7 +6,7 @@ This is accomplished through the use of [Arblib](https://arblib.org)'s `acb_t` d
 Solutions are computed as power series expansions about the origin using a recursion relation between the coefficients.
 With the help of analytic continuation this can be turned into a solution anywhere in the complex plane.
 
-For a similar library using p-adic arithmetic, see [Implode](https://github.org/MGessinger/implode).
+For a similar library using p-adic arithmetic, see [Implode](https://github.com/MGessinger/implode).
 
 Author: Matthias Gessinger
 
