@@ -1,13 +1,19 @@
 # Cascade - The C Library for Approximative Solutions to Complex Arbitrary Precision Differential Equations
 
 Welcome to Cascade v2.1.
-Cascade is a library designed to store and solve differential equations to arbitrary precision. This is accomplished through the use of [Arblib](https://arblib.org)'s acb data type, which uses ball arithmetic to store arbitrary precision floating point numbers with error bounds. Solutions are computed as power series expansions about the origin using a recursion relation between the coefficients. With the help of analytic continuation this can be turned into a solution anywhere in the complex plane.
+Cascade is a library designed to store and solve differential equations to arbitrary precision.
+This is accomplished through the use of [Arblib](https://arblib.org)'s `acb_t` data type, which uses ball arithmetic to store arbitrary precision floating point numbers with error bounds.
+Solutions are computed as power series expansions about the origin using a recursion relation between the coefficients.
+With the help of analytic continuation this can be turned into a solution anywhere in the complex plane.
+
+For a similar library using p-adic arithmetic, see [Implode](https://github.org/MGessinger/implode).
 
 Author: Matthias Gessinger
 
 ## Installation
 
-This library can be build from source as a shared object library through CMake. For a default installation, run the following commands:
+This library can be build from source as a shared object library through CMake.
+For a default installation, run the following commands:
 
 ```bash
 mkdir build
@@ -76,8 +82,10 @@ sys	0m0,005s
 
 ## Memory management
 
-Because Arb caches some constants internally, it is recommended to call *flint_cleanup()* at the end of your main program. This will clear Arb's internal cache and guarantee a clean output of *Valgrind*.
+Because Arb caches some constants internally, it is recommended to call *flint_cleanup()* at the end of your main program.
+This will clear Arb's internal cache and guarantee a clean output of *Valgrind*.
 
 ## Dependencies
 
-Cascade uses [Arb](https://arblib.org) to store complex numbers and [Flint](http://flintlib.org) to handle memory management. Therefore both of these libraries have to be installed in order to build Cascade, and also to build programs using Cascade!
+Cascade uses [Arb](https://arblib.org) to store complex numbers and [Flint](http://flintlib.org) to handle memory management.
+Therefore both of these libraries have to be installed in order to build Cascade, and also to build programs using Cascade!

@@ -37,7 +37,7 @@ author = u'Matthias Gessinger'
 # built documents.
 #
 # The short X.Y version.
-version = u'2.2'
+version = u'2.1'
 # The full version, including alpha/beta/rc tags.
 release = u'2.1'
 
