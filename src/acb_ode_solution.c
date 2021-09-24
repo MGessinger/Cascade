@@ -21,6 +21,42 @@ void acb_ode_solution_clear (acb_ode_solution_t sol)
 	flint_free(sol->gens);
 }
 
+void acb_ode_solution_evaluate (acb_t out, acb_ode_solution_t sol, acb_t a, slong prec)
+{
+	acb_t l, p, res;
+	slong binom = 1;
+
+	if (acb_is_zero(a))
+	{
+		acb_indeterminate(out);
+		return;
+	}
+
+	acb_init(l);
+	acb_init(p);
+	acb_init(res);
+
+	acb_log(l, a, prec);
+	acb_poly_evaluate(res, sol->gens, a, prec);
+	for (slong i = 1; i < sol->M; i++)
+	{
+		acb_mul(res, res, l, prec);
+
+		acb_poly_evaluate(p, sol->gens + i, a, prec);
+		binom = (binom * (sol->M - i + 1)) / i;
+		acb_mul_si(p, p, binom, prec);
+
+		acb_add(res, res, p, prec);
+	}
+
+	acb_pow(p, a, sol->rho, prec);
+	acb_mul(out, res, p, prec);
+
+	acb_clear(res);
+	acb_clear(l);
+	acb_clear(p);
+}
+
 void _acb_ode_solution_update (acb_ode_solution_t sol, acb_poly_t f, slong prec)
 {
 	acb_struct *F;

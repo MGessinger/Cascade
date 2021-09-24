@@ -50,3 +50,8 @@ There should rarely be a need to call these directly.
 .. function:: void _acb_ode_solution_extend (acb_ode_solution_t sol, slong nu, acb_poly_t g_nu, slong prec)
 
 	Set the *nu*-th coefficients of the internal power series to the *rho*-derivatives of *g_nu*.
+
+.. function:: void acb_ode_solution_evaluate (acb_t out, acb_ode_solution_t sol, acb_t a, slong prec)
+
+	Evaluate the solution stored in *sol* at the point a.
+	Because any solution may contain logarithms, a must not be zero.

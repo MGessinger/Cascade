@@ -9,6 +9,7 @@ set(Tests
 	indicial_polynomial
 	solution_extend
 	solution_update
+	solution_eval
 	singleton_frobenius
 	frobenius
 )
