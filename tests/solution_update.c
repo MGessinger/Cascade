@@ -27,7 +27,7 @@ int main ()
 		prec = 30 + n_randint(state, 128);
 
 		acb_randtest(rho, state, prec, 16);
-		acb_ode_solution_init(sol, rho, n_randint(state, 10), 0);
+		acb_ode_solution_init(sol, rho, n_randint(state, 15), 0);
 
 		/* Setup */
 		acb_poly_randtest(f, state, 20, prec, 16);
