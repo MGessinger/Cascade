@@ -3,7 +3,7 @@
 int main ()
 {
 	int return_value = EXIT_SUCCESS;
-	slong prec, degree, order, n;
+	slong prec, n;
 
 	acb_t num;
 	acb_ode_t ODE;
@@ -33,7 +33,7 @@ int main ()
 		_acb_ode_solve_frobenius(w->gens, ODE, w, n, prec);
 		acb_poly_shift_left(w->gens, w->gens, order(ODE) - 1);
 
-		int solved = acb_ode_solves(ODE, w->gens, n-1, prec);
+		int solved = acb_ode_solves(ODE, w->gens, n - 1, prec);
 
 		acb_ode_clear(ODE);
 		acb_ode_solution_clear(w);
